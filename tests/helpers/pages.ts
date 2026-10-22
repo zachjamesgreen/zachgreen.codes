@@ -9,5 +9,5 @@ export const PAGES = [
 
   { path: "/about/", name: "about" },
 
-  // resume
+  { path: "/resume/", name: "resume" },
 ] as const;

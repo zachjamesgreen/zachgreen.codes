@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Resume - Zach Green</title>
+    <meta name="description" content="The resume of Zach Green, Web Developer at Settlor in Denver, Colorado: experience, the tagshelf project, skills and education, with a PDF to download.">
+    <link rel="canonical" href="https://zachgreen.codes/resume/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="zachgreen.codes">
+    <meta property="og:title" content="Resume - Zach Green">
+    <meta property="og:description" content="The resume of Zach Green, Web Developer at Settlor in Denver, Colorado: experience, the tagshelf project, skills and education, with a PDF to download.">
+    <meta property="og:url" content="https://zachgreen.codes/resume/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="theme-color" content="#17171c">
+    <link rel="stylesheet" href="/css/site.css?v=1">
+    <link rel="stylesheet" href="/css/print.css?v=1" media="print">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="skip-link" href="#main">Skip to content</a>
+      <a class="site-brand" href="/">zachgreen.codes</a>
+      <nav class="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="/#work">Work</a></li>
+          <li><a href="/about/">About</a></li>
+          <li><a href="/resume/" aria-current="page">Resume</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <!-- The single source for site/resume/zach-green-resume.pdf: after any
+         edit here or in css/print.css, run `pnpm resume:pdf` and commit the
+         PDF too. Every link that prints must be absolute, because the PDF
+         keeps it; the download link doesn't print. -->
+    <main id="main" tabindex="-1">
+      <section class="card resume-intro" data-accent="yellow" aria-labelledby="resume-title">
+        <h1 id="resume-title">Zach Green</h1>
+        <p class="resume-intro__lead">Web Developer at Settlor, in Denver, Colorado.</p>
+        <p class="resume-intro__summary">Nearly five years of full-stack work on the in-house platform a title and escrow company runs on: Python, Flask and PostgreSQL on the back end, Vue 3 and TypeScript on the front end. I want to know why things work, and I keep my tools and dependencies current.</p>
+        <ul class="resume-contact" aria-label="Contact">
+          <li><a href="https://zachgreen.codes/">zachgreen.codes</a></li>
+          <li><a href="mailto:zachjamesgreen&#64;gmail&#46;com">zachjamesgreen&#64;gmail&#46;com</a></li>
+          <li><a href="https://github.com/zachjamesgreen">github.com/zachjamesgreen</a></li>
+          <li><a href="https://www.linkedin.com/in/zachjamesgreen/">linkedin.com/in/zachjamesgreen</a></li>
+        </ul>
+        <div class="actions">
+          <a class="btn" href="/resume/zach-green-resume.pdf" download>Download the PDF</a>
+        </div>
+      </section>
+
+      <section class="section" id="experience" data-accent="pink" aria-labelledby="experience-title">
+        <h2 id="experience-title">Experience</h2>
+        <ol class="timeline resume-entries">
+          <li>
+            <p class="timeline__when"><time datetime="2021-12-06">Dec 2021</time> to present</p>
+            <h3>Web Developer</h3>
+            <p class="muted">Settlor</p>
+            <div class="prose">
+              <p>A title insurance and escrow company that runs on its own software: an internal operations platform for title, closing, escrow accounting and e-recording, client portals for lenders and agents, and a public API.</p>
+              <ul>
+                <li>Led a cross-repo upgrade to Python 3.14 on new Debian base images in 2026: got the code ready for SQLAlchemy 2.0, moved to Node 24, pinned exact dependency versions and gated image builds on vulnerability scans. About 650 commits across about 23 repositories.</li>
+                <li>Built a remote print service end to end, as its only developer: a Windows service at office sites that takes print jobs from the cloud app and drives local printers over IPP, with a job queue, retries, a web admin page and a signed installer.</li>
+                <li>The largest single contributor to the in-house Vue 3 design system, with about 400 of its 1,300 commits, and to moving screens off Vue 2.</li>
+                <li>Built FastAPI endpoints for the public API, led the move to Pydantic v2-native schemas, and rolled out type checking with ty, advisory first and then blocking.</li>
+              </ul>
+            </div>
+          </li>
+          <li>
+            <p class="timeline__when"><time datetime="2021-09">Sep 2021</time> to <time datetime="2021-11">Nov 2021</time></p>
+            <h3>Back End Software Engineer</h3>
+            <p class="muted">Fairwinds Ops</p>
+            <p>Built Go features for the Insights product.</p>
+          </li>
+          <li>
+            <p class="timeline__when"><time datetime="2020-09">Sep 2020</time> to <time datetime="2021-05">May 2021</time></p>
+            <h3>Line Cook</h3>
+            <p class="muted">Bluegrass Lounge</p>
+          </li>
+          <li>
+            <p class="timeline__when"><time datetime="2019-01">Jan 2019</time> to <time datetime="2021-02">Feb 2021</time></p>
+            <h3>Sous Chef</h3>
+            <p class="muted">Blake Street Tavern</p>
+            <p>Ran food prep, wrote procedures, trained staff and managed inventory.</p>
+          </li>
+          <li>
+            <p class="timeline__when"><time datetime="2015-03">Mar 2015</time> to <time datetime="2016-10">Oct 2016</time></p>
+            <h3>Software Engineer</h3>
+            <p class="muted">ShipOffers</p>
+            <p>Built Ruby on Rails features for an order management system, plus daily accounting reports.</p>
+          </li>
+          <li>
+            <p class="timeline__when"><time datetime="2010-02">Feb 2010</time> to <time datetime="2015-02">Feb 2015</time></p>
+            <h3>Hospital Corpsman</h3>
+            <p class="muted">United States Navy</p>
+            <p>Gave emergency, standard and routine medical treatment to service members.</p>
+          </li>
+        </ol>
+      </section>
+
+      <div class="resume-split">
+        <section class="section" id="project" data-accent="blue" aria-labelledby="project-title">
+          <h2 id="project-title">Project</h2>
+          <article class="card resume-project" data-accent="blue">
+            <h3>tagshelf</h3>
+            <p class="card__meta">Go, for Windows and Linux, since <time datetime="2026-10">Oct 2026</time></p>
+            <div class="prose">
+              <p>Sorts audio files into a music library by their tags. It sets identical copies aside instead of deleting them, and records every move so a run can be undone.</p>
+              <ul>
+                <li>A CLI for runs, and a terminal UI for the files that need a person: fixing tags, MusicBrainz lookups, choosing which duplicate to keep.</li>
+                <li>Static builds for Windows (amd64) and Linux (amd64 and arm64) that need no C library, with CI on GitHub and checksummed releases.</li>
+                <li>Does a dry run first, never deletes an audio file, and migrates its own database on upgrade, keeping a backup of the old one.</li>
+              </ul>
+            </div>
+            <p><a href="https://github.com/zachjamesgreen/tagshelf">github.com/zachjamesgreen/tagshelf</a></p>
+          </article>
+        </section>
+
+        <div class="resume-side">
+          <section class="section" id="skills" data-accent="yellow" aria-labelledby="skills-title">
+            <h2 id="skills-title">Skills</h2>
+            <dl class="resume-skills">
+              <div>
+                <dt>Languages</dt>
+                <dd>Python, TypeScript, Go</dd>
+              </div>
+              <div>
+                <dt>Back end</dt>
+                <dd>Flask, FastAPI, Pydantic v2, SQLAlchemy, Alembic, PostgreSQL, Celery, Redis, WebSockets</dd>
+              </div>
+              <div>
+                <dt>Front end</dt>
+                <dd>Vue 3, Vite, Pinia, Storybook</dd>
+              </div>
+              <div>
+                <dt>Testing</dt>
+                <dd>pytest, Vitest, Playwright</dd>
+              </div>
+              <div>
+                <dt>Infrastructure</dt>
+                <dd>Docker, Kubernetes, Helm, GitHub Actions, Google Cloud</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="section" id="education" data-accent="pink" aria-labelledby="education-title">
+            <h2 id="education-title">Education</h2>
+            <ol class="timeline resume-entries">
+              <li>
+                <p class="timeline__when"><time datetime="2021-02">Feb 2021</time> to <time datetime="2021-10">Oct 2021</time></p>
+                <h3>Back-End Engineering</h3>
+                <p class="muted">Turing School of Software &amp; Design</p>
+                <p>Student Leadership Committee Representative and Black at Turing Representative.</p>
+              </li>
+            </ol>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <ul>
+        <li><a href="https://github.com/zachjamesgreen">GitHub</a></li>
+        <li><a href="https://www.linkedin.com/in/zachjamesgreen/">LinkedIn</a></li>
+        <li><a href="mailto:zachjamesgreen&#64;gmail&#46;com">zachjamesgreen&#64;gmail&#46;com</a></li>
+      </ul>
+      <p>Copyright 2026 Zach Green</p>
+    </footer>
+  </body>
+</html>

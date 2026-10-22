@@ -1,0 +1,239 @@
+/*
+ * The resume on paper (spec §6.5): US Letter, dark ink on white, in the same
+ * two fonts as the site. Only /resume/ links this file, with media="print",
+ * and scripts/resume-pdf.ts prints the PDF with it. Run `pnpm resume:pdf`
+ * after changing it.
+ *
+ * It sits in its own layer, declared after every layer in site.css, so it wins
+ * over all of them whatever the specificity. Most of the work is done by
+ * redefining the tokens.
+ *
+ * Never add text with ::before or ::after (no printed URLs, no separators):
+ * generated content isn't part of innerText, and the PDF test compares the
+ * PDF's words with the printed page's innerText. Separators are borders.
+ */
+
+@page {
+  size: letter;
+  margin: 0.5in 0.55in;
+}
+
+@layer print {
+  :root {
+    /* Ink on paper. 1rem is 8.75pt, so the whole spacing scale shrinks with it. */
+    --bg: oklch(100% 0 0deg);
+    --surface: oklch(100% 0 0deg);
+    --ink: oklch(20.7% 0.01 285deg);
+    --ink-muted: oklch(42% 0.015 285deg);
+    --line: oklch(20.7% 0.01 285deg);
+    --border-w: 2px;
+    --shadow-x: 5px;
+    --shadow-y: 5px;
+    --leading: 1.4;
+
+    color-scheme: light;
+    font-size: 8.75pt;
+    print-color-adjust: exact;
+  }
+
+  body {
+    display: block;
+    min-block-size: 0;
+    max-inline-size: none;
+    padding: 0;
+    background: var(--bg);
+  }
+
+  /* Navigation means nothing on paper, and the PDF can't download itself. */
+  .site-header,
+  .site-footer,
+  main .actions {
+    display: none;
+  }
+
+  main {
+    gap: 1.1rem;
+  }
+
+  h1,
+  h2,
+  h3 {
+    color: var(--ink);
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  .prose {
+    max-inline-size: none;
+
+    & > * + * {
+      margin-block-start: 0.3rem;
+    }
+
+    & :is(ul, ol) {
+      padding-inline-start: 1.2rem;
+    }
+
+    & :where(li + li) {
+      margin-block-start: 0.15rem;
+    }
+  }
+
+  /* Chromium writes text into the PDF in paint order, and positioned boxes
+     paint after everything else. Unpositioned, the PDF reads top to bottom
+     for résumé parsers and copy-paste. Nothing here needs the positioning:
+     no card is a link, and the timeline's markers are hidden. */
+  .card,
+  .timeline > li {
+    position: static;
+  }
+
+  /* The one block that keeps the site's look, border and candy shadow: name
+     and title beside the contact links, then the summary across the page. */
+  .resume-intro {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name contact"
+      "lead contact"
+      "summary summary";
+    gap: 0.35rem 1.5rem;
+    padding: 0.8rem 1rem;
+    box-shadow: var(--shadow-x) var(--shadow-y) 0 var(--accent);
+
+    & h1 {
+      grid-area: name;
+      align-self: end;
+      font-size: 2.6rem;
+    }
+  }
+
+  .resume-intro__lead {
+    grid-area: lead;
+    font-size: 1.15rem;
+  }
+
+  .resume-intro__summary {
+    grid-area: summary;
+    max-inline-size: none;
+  }
+
+  .resume-contact {
+    flex-direction: column;
+    grid-area: contact;
+    align-self: center;
+    padding-inline-start: 0.8rem;
+    border-inline-start: var(--border-w) solid var(--accent);
+
+    & a {
+      padding: 0;
+      font-size: 1rem;
+    }
+  }
+
+  /* A section title: an ink rule with the section's accent under it. */
+  .section {
+    gap: 0.5rem;
+
+    & > h2 {
+      padding-block-end: 0.15rem;
+      font-size: 1.45rem;
+      border-block-end: var(--border-w) solid var(--line);
+      box-shadow: 0 var(--border-w) 0 var(--accent);
+    }
+  }
+
+  .resume-split {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .resume-side {
+    gap: 1.1rem;
+    align-content: start;
+  }
+
+  /* The project card lies flat, like the rest of the page. */
+  .resume-project {
+    gap: 0.3rem;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+
+    & h3 {
+      font-size: 1.2rem;
+    }
+  }
+
+  .card__meta {
+    font-size: 0.95rem;
+  }
+
+  /* Group name and list run together, so each group is a line or two. */
+  .resume-skills {
+    gap: 0.3rem;
+
+    & dt,
+    & dd {
+      display: inline;
+    }
+
+    & dt {
+      margin-inline-end: 0.6rem;
+      font-size: 1rem;
+      color: var(--ink);
+    }
+  }
+
+  /* Each entry starts with one line, title then where then when (pushed to
+     the right), which wraps where it has to. Its details fill the lines below.
+     The source order is when, title, where, details. */
+  .resume-entries {
+    gap: 0.65rem;
+    margin: 0;
+    border: 0;
+
+    & > li {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.15rem 0.6rem;
+      align-items: baseline;
+      padding: 0;
+      break-inside: avoid;
+
+      &::before {
+        display: none;
+      }
+
+      & > * {
+        flex: 1 0 100%;
+        order: 2;
+      }
+
+      & > h3 {
+        flex: 0 1 auto;
+        order: 0;
+        font-size: 1.2rem;
+      }
+
+      & > .muted {
+        flex: 0 1 auto;
+        order: 0;
+        padding-inline-start: 0.6rem;
+        font-weight: 700;
+        color: var(--ink);
+        border-inline-start: var(--border-w) solid var(--accent);
+      }
+
+      & > .timeline__when {
+        flex: 0 0 auto;
+        order: 1;
+        margin-inline-start: auto;
+        font-size: 0.95rem;
+        white-space: nowrap;
+      }
+    }
+  }
+}
