@@ -1,0 +1,5 @@
+# Single-package repo. This file exists for pnpm settings that .npmrc no longer carries.
+saveExact: true
+# The scripts rely on import.meta.main (Node 24.2+); refuse to install on anything older
+# instead of letting a guard CLI silently do nothing.
+engineStrict: true
