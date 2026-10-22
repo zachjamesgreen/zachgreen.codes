@@ -3,7 +3,7 @@
 export const PAGES = [
   { path: "/", name: "home" },
 
-  // settlor
+  { path: "/settlor/", name: "settlor" },
 
   // tagshelf
 
