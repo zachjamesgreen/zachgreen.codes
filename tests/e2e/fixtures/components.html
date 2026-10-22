@@ -23,6 +23,7 @@
     <main id="main" tabindex="-1">
       <section class="card" data-accent="yellow" aria-labelledby="hero-title">
         <h1 id="hero-title">Zach Green</h1>
+        <p class="lead">Full-stack developer at Settlor, in Denver, Colorado.</p>
         <p>Full-stack developer at Settlor. I like knowing <em>why</em> things work, and I keep my tools sharp and my dependencies current.</p>
         <div class="actions">
           <a class="btn" href="#work">See my work</a>
@@ -47,7 +48,7 @@
           <article class="card" data-accent="blue">
             <h3><a class="card__link" href="/tagshelf/">tagshelf</a></h3>
             <p class="card__meta">Open source, Windows and Linux</p>
-            <p>Sorts a music library by its tags, sets duplicates aside and can undo every run.</p>
+            <p>Sorts a music library by its tags, sets identical copies aside and can undo every run.</p>
             <ul class="tag-list">
               <li class="tag">Go</li>
               <li class="tag">TUI</li>
@@ -78,11 +79,30 @@
             <li>Run it.</li>
             <li>Undo it if you change your mind.</li>
           </ol>
+          <p>A tag list inside prose keeps its own spacing, with no list padding:</p>
+          <ul class="tag-list">
+            <li class="tag">Go</li>
+            <li class="tag">CLI</li>
+            <li class="tag">TUI</li>
+            <li class="tag">MusicBrainz</li>
+          </ul>
           <blockquote>
             <p>I always want my music collection organized so that any music player can show me the info I want.</p>
           </blockquote>
         </div>
       </section>
+
+      <div class="split">
+        <section class="section" data-accent="pink" aria-labelledby="split-a-title">
+          <h2 id="split-a-title">Left column</h2>
+          <p>A split puts two sections side by side when both fit in a row.</p>
+        </section>
+
+        <section class="section" data-accent="yellow" aria-labelledby="split-b-title">
+          <h2 id="split-b-title">Right column</h2>
+          <p>When they don't fit, the second one stacks under the first.</p>
+        </section>
+      </div>
 
       <section class="section" data-accent="blue" aria-labelledby="tui-title">
         <h2 id="tui-title">Terminal UI</h2>

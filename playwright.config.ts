@@ -5,7 +5,8 @@ const ci = Boolean(process.env.CI);
 // Several checkouts (git worktrees) can run the e2e suite at once, each on its
 // own port. Each run always starts its own server, so it never tests another
 // checkout's files, or `pnpm dev` (which serves no fixtures).
-const port = Number(process.env.E2E_PORT ?? 4321);
+// An empty or invalid E2E_PORT falls back to the default instead of becoming port 0.
+const port = Number(process.env.E2E_PORT) || 4321;
 const origin = `http://127.0.0.1:${port}`;
 
 export default defineConfig({

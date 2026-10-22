@@ -109,7 +109,7 @@
     }
   }
 
-  .resume-intro__lead {
+  .resume-intro .lead {
     grid-area: lead;
     font-size: 1.15rem;
   }
@@ -144,7 +144,9 @@
     }
   }
 
-  .resume-split {
+  /* Only /resume/ links this file, and its one .split is the project beside
+     skills and education. */
+  .split {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
     gap: 1.5rem;
   }
