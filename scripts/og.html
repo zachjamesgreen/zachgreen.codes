@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>zachgreen.codes social preview</title>
+    <!-- The source of site/img/og.png. scripts/og-image.ts serves it next to the
+         site, so the real site.css and fonts apply, and screenshots it at
+         1200x630. It is never part of the deployed site, so the <style> below
+         doesn't touch the production CSP. Keep the text ASCII: the MonoLisa
+         subsets cover Basic Latin only. -->
+    <link rel="stylesheet" href="/css/site.css">
+    <style>
+      html,
+      body {
+        overflow: hidden;
+      }
+
+      body {
+        inline-size: 1200px;
+        block-size: 630px;
+        max-inline-size: none;
+        min-block-size: 0;
+        margin: 0;
+        padding: 64px;
+        grid-template-rows: minmax(0, 1fr);
+      }
+
+      /* The site's card, scaled up: the same border and hard shadow, just bigger. */
+      .og {
+        --border-w: 6px;
+        --shadow-x: 20px;
+        --shadow-y: 20px;
+
+        align-content: center;
+        gap: 24px;
+        padding: 44px 64px;
+        /* Room for the shadow inside the 64px page padding. */
+        margin-inline-end: 20px;
+        margin-block-end: 20px;
+      }
+
+      .og__site {
+        font-size: 30px;
+        color: var(--ink-muted);
+      }
+
+      .og h1 {
+        font-size: 128px;
+      }
+
+      .og .lead {
+        font-size: 44px;
+      }
+
+      .og .tag-list {
+        gap: 16px;
+        margin-block-start: 8px;
+      }
+
+      .og .tag {
+        padding: 0 16px;
+        font-size: 28px;
+        border-width: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card og" data-accent="yellow">
+      <p class="og__site">zachgreen.codes</p>
+      <h1>Zach Green</h1>
+      <p class="lead">Full-stack developer at Settlor</p>
+      <ul class="tag-list">
+        <li class="tag">Python</li>
+        <li class="tag">Vue 3</li>
+        <li class="tag">Go</li>
+      </ul>
+    </main>
+  </body>
+</html>

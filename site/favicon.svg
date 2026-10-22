@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The site's card on a 32-unit grid: an off-white border, a dark fill, a hard
+       yellow shadow, and a Z in the accent. The hex values are the site.css color
+       tokens (bg, surface, ink, accent-yellow) as culori converts them. It is all
+       shapes, because an icon can't load the site's web fonts. XML comments can't
+       contain two hyphens in a row, so no CSS variable names here. -->
+  <rect width="32" height="32" fill="#17171c"/>
+  <rect x="9" y="9" width="20" height="20" fill="#fed242"/>
+  <rect x="3" y="3" width="20" height="20" fill="#f2f2f2"/>
+  <rect x="5" y="5" width="16" height="16" fill="#24242c"/>
+  <polygon points="7,7 19,7 19,10 11,16 19,16 19,19 7,19 7,16 15,10 7,10" fill="#fed242"/>
+</svg>
