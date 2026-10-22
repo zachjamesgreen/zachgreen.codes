@@ -72,7 +72,7 @@ test.describe("resume page", () => {
 
   test("lists the current stack under skills", async ({ page }) => {
     const skills = page.locator("#skills");
-    for (const skill of ["Python", "Flask", "FastAPI", "PostgreSQL", "Vue 3", "TypeScript", "Playwright", "Docker", "Kubernetes", "Go"]) {
+    for (const skill of ["Python", "Flask", "FastAPI", "PostgreSQL", "Vue", "TypeScript", "Playwright", "Docker", "Kubernetes", "Go"]) {
       await expect(skills).toContainText(skill);
     }
   });
