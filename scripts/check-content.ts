@@ -5,7 +5,8 @@
 //   - .forbidden-terms in the working directory (the repo root): one term per
 //     line, `#` starts a comment. It is gitignored.
 // Both are read and combined. With no term from either, the check fails rather
-// than pass on a scan that could never find one.
+// than pass on a scan that could never find one. A hit is reported by file, line,
+// column and kind only: the matched text is never printed, as the logs are public.
 //
 //   node scripts/check-content.ts          scans site/**/*.{html,css,txt,xml,svg}
 //   ... | node scripts/check-content.ts --stdin   scans piped text instead
@@ -29,34 +30,69 @@ const SPACE = String.raw`(?:\s|&nbsp;|&NonBreakingSpace;|&#0*160;|&#x0*a0;)`;
 /** A letter, combining mark or digit. None may touch a term, so a term never matches inside a longer word. */
 const WORD = String.raw`[\p{L}\p{M}\p{N}]`;
 
-/** What may sit between the groups of a phone number: a space, `.`, `-`, or a typographic dash or hyphen. */
-const SEPARATOR = String.raw`(?:${SPACE}|[.\-\u2010-\u2014\u2212])`;
+/**
+ * A hyphen as HTML source can spell it: `-`, a typographic dash or hyphen (U+2010 to
+ * U+2014, U+2212), or a character reference to one of those: &ndash;, &mdash;,
+ * &minus;, or &#8208;-&#8212; / &#8722; and &#x2010;-&#x2014; / &#x2212; (leading
+ * zeros allowed). It is matched in place, as SPACE is, not by rewriting the text
+ * first, so a hit's index stays an index into the source.
+ */
+const DASH = String.raw`(?:-|[\u2010-\u2014\u2212]|&(?:ndash|mdash|minus|#0*(?:820[89]|821[0-2]|8722)|#x0*(?:201[0-4]|2212));)`;
+
+/** What may sit between the groups of a phone number: a space, `.`, or a dash. */
+const SEPARATOR = String.raw`(?:${SPACE}|\.|${DASH})`;
 
 // A 10-digit NANP number: optional +1, optional parentheses around the area
 // code, and one separator between the groups (or nothing at all). Area code and
 // exchange start with 2-9. The lookarounds keep it from matching inside a
-// longer digit run or a decimal such as 0.7205550100.
-const PHONE = String.raw`(?<![\d.])(?:\+?1${SEPARATOR}?)?(?:\([2-9]\d{2}\)|[2-9]\d{2})${SEPARATOR}?[2-9]\d{2}${SEPARATOR}?\d{4}(?!\d)`;
+// longer digit run or a decimal such as 0.7205550100. The group's name is how
+// findForbidden tells a number from a term.
+const PHONE = String.raw`(?<phone>(?<![\d.])(?:\+?1${SEPARATOR}?)?(?:\([2-9]\d{2}\)|[2-9]\d{2})${SEPARATOR}?[2-9]\d{2}${SEPARATOR}?\d{4}(?!\d))`;
 
 /**
  * A term as a pattern: its words, with any run of whitespace or NBSP references
- * between them, and no letter or digit on either side. Undefined for a blank term.
+ * between them and any spelling of a hyphen where it has one, and no letter or
+ * digit on either side. Undefined for a blank term.
  */
 function termPattern(term: string): string | undefined {
   const words = term.replace(new RegExp(SPACE, "giv"), " ").split(/\s+/).filter(Boolean);
   if (words.length === 0) return undefined;
-  return `(?<!${WORD})${words.map((word) => RegExp.escape(word)).join(`${SPACE}+`)}(?!${WORD})`;
+  const spelled = words.map((word) =>
+    word
+      .split(/[-\u2010-\u2014\u2212]/)
+      .map((part) => RegExp.escape(part))
+      .join(DASH),
+  );
+  return `(?<!${WORD})${spelled.join(`${SPACE}+`)}(?!${WORD})`;
 }
 
-/** Every forbidden term (in any letter case) or phone number in `text`: the text as found, and where. */
-export function findForbidden(text: string, terms: readonly string[]): { term: string; index: number }[] {
+/**
+ * One hit of the guard. `term` is the text as found, for the caller to compare:
+ * it can be a forbidden name or a phone number, and the output goes to public logs,
+ * so print `index` and `kind`, never `term` (see hitSummary).
+ */
+export type Hit = { kind: "term" | "phone"; term: string; index: number };
+
+/** Every forbidden term (in any letter case) or phone number in `text`: which, the text as found, and where. */
+export function findForbidden(text: string, terms: readonly string[]): Hit[] {
   // Longest first, so a term that contains another is reported whole.
   const names = terms
     .map(termPattern)
     .filter((pattern) => pattern !== undefined)
     .toSorted((a, b) => b.length - a.length);
   const forbidden = new RegExp([...names, PHONE].join("|"), "giv");
-  return [...text.matchAll(forbidden)].map((match) => ({ term: match[0], index: match.index }));
+  return [...text.matchAll(forbidden)].map((match) => ({
+    kind: match.groups?.phone === undefined ? "term" : "phone",
+    term: match[0],
+    index: match.index,
+  }));
+}
+
+/** How many hits there are and at which character offsets, for a failure message. Never the text found. */
+export function hitSummary(hits: readonly Pick<Hit, "index">[]): string {
+  if (hits.length === 0) return "no forbidden terms or phone numbers";
+  const s = hits.length === 1 ? "" : "s";
+  return `${hits.length} forbidden term${s} or phone number${s}, at character offset${s} ${hits.map(({ index }) => index).join(", ")}`;
 }
 
 /** The terms in a FORBIDDEN_TERMS value: separated by commas or newlines. */
@@ -88,11 +124,13 @@ export async function loadForbiddenTerms({ env = process.env, cwd = process.cwd(
 
 function report(label: string, content: string, terms: readonly string[]): number {
   const hits = findForbidden(content, terms);
-  for (const { term, index } of hits) {
+  // The location and the kind of hit, never the text: CI logs are public, and a
+  // matched term or number is exactly what must not be in them.
+  for (const { kind, index } of hits) {
     const before = content.slice(0, index);
     const line = before.split("\n").length;
     const column = index - (before.lastIndexOf("\n") + 1) + 1;
-    console.error(`${label}:${line}:${column}  forbidden: ${JSON.stringify(term)}`);
+    console.error(`${label}:${line}:${column}  ${kind === "phone" ? "phone number" : "forbidden term"}`);
   }
   return hits.length;
 }

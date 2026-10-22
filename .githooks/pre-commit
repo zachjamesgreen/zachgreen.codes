@@ -1,6 +1,15 @@
 #!/bin/sh
-# Blocks committing the commercial font files, which must never be in this public repo.
+# Blocks committing what must never be in this public repo: the commercial font files,
+# and a phone number or any of the terms kept out of it (the content guard).
 # Enabled by `pnpm install`, whose `prepare` script sets core.hooksPath to this directory.
 set -eu
 
-exec node scripts/check-no-fonts.ts --staged
+node scripts/check-no-fonts.ts --staged
+
+# The guard scans site/ in the working tree. Its terms come from FORBIDDEN_TERMS or the
+# gitignored .forbidden-terms, and with neither it fails closed, so this also stops a
+# commit on a machine that cannot check anything.
+node scripts/check-content.ts || {
+  echo "pre-commit: content guard failed; it needs terms in FORBIDDEN_TERMS or .forbidden-terms (gitignored)." >&2
+  exit 1
+}

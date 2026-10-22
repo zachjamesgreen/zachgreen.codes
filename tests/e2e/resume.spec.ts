@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { extractLinks } from "unpdf";
 
-import { findForbidden, loadForbiddenTerms, NO_TERMS } from "../../scripts/check-content.ts";
+import { findForbidden, hitSummary, loadForbiddenTerms, NO_TERMS } from "../../scripts/check-content.ts";
 import { htmlWords, pdfFontNames, pdfWords, readPdf } from "../helpers/pdf-text.ts";
 
 const PDF_URL = "/resume/zach-green-resume.pdf";
@@ -140,7 +140,10 @@ test.describe("resume PDF", () => {
     expect(pages).toBeLessThanOrEqual(2);
     const terms = await loadForbiddenTerms();
     expect(terms.length, NO_TERMS).toBeGreaterThan(0);
-    expect(findForbidden(text, terms)).toEqual([]);
+    // Only the count and offsets: a failure here lands in public CI logs and reports,
+    // so it must not show the text it matched.
+    const hits = findForbidden(text, terms);
+    expect(hits.length, `the PDF text has ${hitSummary(hits)}`).toBe(0);
   });
 
   // The PDF is set in the site's own fonts, so it must be generated where
