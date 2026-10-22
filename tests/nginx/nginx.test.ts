@@ -26,6 +26,7 @@ const IMAGE = "nginx:1.28.3@sha256:146adea4768b83c607d0bdfa4188464e3da6e0a3ad447
 const LABEL = "zachgreen.codes.test=nginx";
 const REPO = resolve(import.meta.dirname, "../..");
 const CONF = join(REPO, "deploy/nginx");
+const FONT_STUB = "fonts/nginx-test-stub.woff2";
 
 // Ubuntu 26.04's stock /etc/nginx/nginx.conf (package nginx 1.28.3), minus its comments.
 // It sets the include layout, and it already has `gzip on;` in the http block, so a
@@ -105,13 +106,16 @@ before(async () => {
   const webRoot = join(tmp, "var/www/zachgreen.codes");
   const site = join(webRoot, "site");
 
-  // nginx config, at the paths it has on the server. conf.d/zachgreen-brotli.conf stays
+  // nginx config, at the paths it has on the server. snippets/zachgreen-brotli.conf stays
   // out: the stock image has no brotli module, and an unknown directive fails `nginx -t`.
+  // The site config includes it through a glob, which then matches nothing.
   await put(join(etcNginx, "nginx.conf"), UBUNTU_NGINX_CONF);
   await put(join(etcNginx, "sites-enabled/default"), DEFAULT_SERVER);
   await copy(join(CONF, "zachgreen.codes.conf"), join(etcNginx, "sites-enabled/zachgreen.codes"));
   await copy(join(CONF, "conf.d/zachgreen.conf"), join(etcNginx, "conf.d/zachgreen.conf"));
-  await copy(join(CONF, "snippets/security-headers.conf"), join(etcNginx, "snippets/security-headers.conf"));
+  for (const snippet of ["security-headers.conf", "zachgreen-compression.conf"]) {
+    await copy(join(CONF, "snippets", snippet), join(etcNginx, "snippets", snippet));
+  }
 
   // Let's Encrypt files.
   const live = join(letsencrypt, "live/zachgreen.codes");
@@ -131,6 +135,9 @@ before(async () => {
   // files win once they exist.
   await putIfMissing(join(site, "settlor/index.html"), STUB_PAGE);
   await putIfMissing(join(site, "resume/zach-green-resume.pdf"), "%PDF-1.4\n%%EOF\n");
+  // The real fonts are gitignored, so CI has none. nginx types a file by its extension,
+  // so a stub under its own name is enough to check the font caching rule.
+  await put(join(site, FONT_STUB), "wOF2 stub for the nginx test\n");
   // Probes beside site/, where the clone has them: unreachable because root is site/.
   await put(join(webRoot, ".git/HEAD"), "ref: refs/heads/main\n");
   await put(join(webRoot, "docs/index.html"), STUB_PAGE);
@@ -175,6 +182,7 @@ test("the site config passes the shared assertions", async () => {
     resolveTo: "127.0.0.1",
     insecureTls: true,
     expectBrotli: false,
+    fontPath: `/${FONT_STUB}`,
   });
 });
 
