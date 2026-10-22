@@ -2,18 +2,15 @@
 // that uses every component: tests/e2e/fixtures/components.html, served at
 // /__fixtures__/ by the dev server.
 
-import { existsSync } from "node:fs";
-
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator } from "@playwright/test";
 
+import { FONT_FAMILIES, haveFonts, loadedFamilies } from "../../scripts/lib/site.ts";
 import { AXE_TAGS } from "../helpers/axe.ts";
 
 const FIXTURE = "/__fixtures__/components.html";
 
-const HAVE_FONTS = ["0-MonoLisaCode-normal.woff2", "callingcode-bold-webfont.woff2"].every((file) =>
-  existsSync(new URL(`../../site/fonts/${file}`, import.meta.url)),
-);
+const HAVE_FONTS = haveFonts();
 
 /** Computed values of the given (kebab-case) properties. */
 function computed<const P extends string>(locator: Locator, ...properties: P[]): Promise<Record<P, string>> {
@@ -336,9 +333,10 @@ test("the fallback faces take up the same space as the web fonts", async ({ brow
     const page = await context.newPage();
     if (blockFonts) await page.route("**/fonts/**", (route) => route.abort());
     await page.goto(FIXTURE);
+    // Waits for the fonts to settle, so the boxes below are measured in their final fonts.
+    const loaded = await loadedFamilies(page);
     const result = await page.evaluate(
-      async ([inline, blocks]) => {
-        await document.fonts.ready;
+      ([inline, blocks]) => {
         const box = (selector: string) => {
           const element = document.querySelector(selector)!;
           // An inline element's width is the width of its text.
@@ -346,7 +344,6 @@ test("the fallback faces take up the same space as the web fonts", async ({ brow
           return { width: rect.width, height: rect.height };
         };
         return {
-          loaded: [...document.fonts].filter((face) => face.status === "loaded").map((face) => face.family.replaceAll('"', "")),
           inline: Object.fromEntries(inline!.map((selector) => [selector, box(selector)])),
           blocks: Object.fromEntries(blocks!.map((selector) => [selector, box(selector)])),
           frameText: document.querySelector(".tui-frame")!.scrollWidth,
@@ -356,14 +353,13 @@ test("the fallback faces take up the same space as the web fonts", async ({ brow
       [SHRINK_WRAPPED, BLOCKS],
     );
     await context.close();
-    return result;
+    return { loaded, ...result };
   };
 
   const fallback = await measure(true);
   const real = await measure(false);
-  expect(fallback.loaded).not.toContain("MonoLisa");
-  expect(fallback.loaded).not.toContain("Calling Code");
-  expect(real.loaded).toEqual(expect.arrayContaining(["MonoLisa", "Calling Code"]));
+  for (const family of FONT_FAMILIES) expect(fallback.loaded).not.toContain(family);
+  expect(real.loaded).toEqual(expect.arrayContaining([...FONT_FAMILIES]));
 
   for (const selector of SHRINK_WRAPPED) {
     const [a, b] = [real.inline[selector]!, fallback.inline[selector]!];

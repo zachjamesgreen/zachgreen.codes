@@ -12,6 +12,7 @@ import {
   fontFaceDescriptors,
   subsetOf,
 } from "../../scripts/font-metrics.ts";
+import { haveFonts } from "../../scripts/lib/site.ts";
 
 const text = (...codePoints: number[]) => String.fromCodePoint(...codePoints);
 const digits = (cp: number) => cp.toString(16).toUpperCase().padStart(4, "0");
@@ -32,9 +33,9 @@ const faces = [...css.matchAll(/@font-face\s*\{([^}]*)\}/g)].map(([, body]) => {
 const monolisaFaces = faces.filter((face) => face.family === "MonoLisa");
 
 // The commercial fonts are never committed, so tests that open them only run
-// where site/fonts/ exists; CI skips them.
+// where every font file site.css loads is in site/fonts/; CI skips them.
 const fontsDir = new URL("../../site/fonts/", import.meta.url);
-const noFonts = !existsSync(fontsDir) && "site/fonts/ is absent (CI has no fonts), so the font files can't be read";
+const noFonts = !haveFonts() && "the font files site.css loads aren't all in site/fonts/ (CI has none), so they can't be read";
 
 describe("MONOLISA_RANGES", () => {
   it("is Basic Latin without DEL, then box drawing, in ascending order", () => {

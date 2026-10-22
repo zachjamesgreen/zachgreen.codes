@@ -6,13 +6,13 @@
 import { expect, test, type Page } from "@playwright/test";
 import { formatHex, parse } from "culori";
 
+import { NOT_FOUND_PATH, ORIGIN } from "../../scripts/lib/site.ts";
 import { PAGES } from "../helpers/pages.ts";
 
-const ORIGIN = "https://zachgreen.codes";
 const OG_IMAGE = `${ORIGIN}/img/og.png`;
 
 /** Any unknown path gets the styled 404 page, which is not in the sitemap. */
-const NOT_FOUND = { path: "/nope", name: "404" } as const;
+const NOT_FOUND = { path: NOT_FOUND_PATH, name: "404" } as const;
 
 const meta = (page: Page, selector: string) => page.locator(`head > meta[${selector}]`).getAttribute("content");
 

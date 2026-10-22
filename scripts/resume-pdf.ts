@@ -11,12 +11,10 @@
 
 import { chromium } from "@playwright/test";
 
+import { requireWebFonts } from "./lib/site.ts";
 import { startServer } from "./serve.ts";
 
 export const RESUME_PDF = "site/resume/zach-green-resume.pdf";
-
-/** The web fonts the PDF must embed (spec §5.4). */
-const FAMILIES = ["Calling Code", "MonoLisa"];
 
 /** Prints `${baseUrl}/resume/` to `outFile` as a US Letter PDF. */
 export async function renderResumePdf(baseUrl: string, outFile: string): Promise<void> {
@@ -27,18 +25,10 @@ export async function renderResumePdf(baseUrl: string, outFile: string): Promise
     const response = await page.goto(url);
     if (!response?.ok()) throw new Error(`${url} answered ${response?.status()}`);
 
-    // Lay the page out for print before waiting on the fonts, so a face that
-    // only print.css uses has started loading too.
+    // The PDF embeds the web fonts, never a fallback. The check lays the page out
+    // for print first, so a face that only print.css uses has started loading too.
     await page.emulateMedia({ media: "print" });
-    const loaded = await page.evaluate(async () => {
-      document.body.getBoundingClientRect();
-      await document.fonts.ready;
-      return [...document.fonts].filter((face) => face.status === "loaded").map((face) => face.family.replaceAll('"', ""));
-    });
-    const missing = FAMILIES.filter((family) => !loaded.includes(family));
-    if (missing.length > 0) {
-      throw new Error(`${missing.join(" and ")} did not load. Copy the font files into site/fonts/ first (spec §5.4).`);
-    }
+    await requireWebFonts(page);
 
     // tagged: the PDF carries the page's structure for screen readers.
     await page.pdf({ path: outFile, format: "Letter", printBackground: true, preferCSSPageSize: true, tagged: true });

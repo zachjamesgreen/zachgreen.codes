@@ -6,9 +6,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { describe, it } from "node:test";
 
+import { ORIGIN } from "../../scripts/lib/site.ts";
 import { PAGES } from "../helpers/pages.ts";
-
-const ORIGIN = "https://zachgreen.codes";
 
 const read = (path: string) => readFile(new URL(`../../site/${path}`, import.meta.url));
 
