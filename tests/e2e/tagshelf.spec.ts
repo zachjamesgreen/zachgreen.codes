@@ -55,6 +55,24 @@ test.describe("tagshelf", () => {
     await expect(main).toContainText("Linux");
   });
 
+  // The release ships windows-amd64, linux-amd64 and linux-arm64: no Windows on arm64.
+  test("names the builds exactly, with no claim of a Windows arm64 build", async ({ page }) => {
+    const text = await page.locator("main").innerText();
+    expect(text).toContain("Windows (amd64) and Linux (amd64 and arm64)");
+    // "Windows ... arm64" with no "(" in between would put arm64 on Windows too.
+    expect(text).not.toMatch(/Windows[^.(]*arm64/);
+  });
+
+  // Only identical copies are set aside on their own; other duplicates go to a person in the TUI.
+  test("says identical copies, not duplicates, are set aside, in the lead and in both descriptions", async ({ page }) => {
+    await expect(page.locator(".tagshelf-lead")).toContainText("identical copies");
+    await expect(page.locator(".tagshelf-lead")).not.toContainText("duplicates aside");
+    for (const meta of ['meta[name="description"]', 'meta[property="og:description"]']) {
+      await expect(page.locator(meta), meta).toHaveAttribute("content", /sets identical copies aside/);
+      await expect(page.locator(meta), meta).not.toHaveAttribute("content", /duplicates aside/);
+    }
+  });
+
   test("the why section keeps Zach's own words", async ({ page }) => {
     const why = page.locator("section", { has: page.getByRole("heading", { level: 2, name: /why/i }) });
     await expect(why).toHaveCount(1);
