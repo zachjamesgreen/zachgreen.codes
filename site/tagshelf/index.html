@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>tagshelf - a music library tool by Zach Green</title>
+    <meta name="description" content="tagshelf is a Go tool by Zach Green that sorts a music library by its tags, sets duplicates aside instead of deleting them, and can undo every run. For Windows and Linux.">
+    <link rel="canonical" href="https://zachgreen.codes/tagshelf/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="zachgreen.codes">
+    <meta property="og:title" content="tagshelf - a music library tool by Zach Green">
+    <meta property="og:description" content="tagshelf is a Go tool by Zach Green that sorts a music library by its tags, sets duplicates aside instead of deleting them, and can undo every run. For Windows and Linux.">
+    <meta property="og:url" content="https://zachgreen.codes/tagshelf/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="theme-color" content="#17171c">
+    <link rel="stylesheet" href="/css/site.css?v=1">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="skip-link" href="#main">Skip to content</a>
+      <a class="site-brand" href="/">zachgreen.codes</a>
+      <nav class="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="/#work">Work</a></li>
+          <li><a href="/about/">About</a></li>
+          <li><a href="/resume/">Resume</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <section class="card" data-accent="blue" aria-labelledby="intro-title">
+        <h1 id="intro-title">tagshelf</h1>
+        <p class="tagshelf-lead">Sorts a music library by its tags, sets duplicates aside instead of deleting them, and can undo every run.</p>
+        <p>A command-line tool and terminal UI, written in Go, for Windows and Linux.</p>
+        <ul class="tag-list">
+          <li class="tag">Go</li>
+          <li class="tag">CLI</li>
+          <li class="tag">TUI</li>
+          <li class="tag">MusicBrainz</li>
+          <li class="tag">Windows</li>
+          <li class="tag">Linux</li>
+        </ul>
+        <div class="actions">
+          <a class="btn" href="https://github.com/zachjamesgreen/tagshelf">View on GitHub</a>
+          <a class="btn btn--alt" href="https://github.com/zachjamesgreen/tagshelf/releases">Releases</a>
+        </div>
+      </section>
+
+      <section class="section" data-accent="blue" aria-labelledby="tui-title">
+        <h2 id="tui-title">The terminal UI</h2>
+        <p>Files that need a person get a terminal UI: fixing tags, MusicBrainz lookups, choosing which duplicate to keep. This is its Duplicates tab, with one track that exists twice, as a FLAC and an MP3. It's text, not a screenshot, and on a small screen it scrolls sideways.</p>
+        <pre class="tui-frame" role="group" aria-label="tagshelf terminal UI, Duplicates tab" tabindex="0">
+ tagshelf  T:\Music  library 345d9616
+ 1 Home   2 Untagged 2   3 Duplicates 1   4 Library   5 Runs   6 Settings   7 Files
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Duplicates (1 group to review)
+  Song                                  Kind           Copies  Keeps
+› Fixture Artist - Silence Café         release-track       2  …bum (2001)\1-03 - Silence Café.flac
+
+Fixture Artist - Silence Café  release-track, 2 copies
+  ★ library    Fixture Album Artist\Fixture Album (2001)\1-03 - Silence Café.flac
+               FLAC  lossless 8 kHz/16       0:01  Fixture Artist / Fixture Album / Silence Café
+    library    Fixture Album Artist\Fixture Album (2001)\1-03 - Silence Café.mp3
+               MP3   8 kbps 8 kHz            0:01  Fixture Artist / Fixture Album / Silence Café
+
+
+↑↓/n select  k keeper  enter resolve  b keep both  c confirm  A all exact   1-7 tabs  R reload  ? h…</pre>
+      </section>
+
+      <div class="tagshelf-split">
+        <section class="section" data-accent="pink" aria-labelledby="what-title">
+          <h2 id="what-title">What it does</h2>
+          <div class="prose">
+            <p>tagshelf sorts audio files into a music library by their tags. It moves each file to <code>Artist\Album (Year)\NN - Title.ext</code>.</p>
+            <p>Identical copies are set aside instead of deleted, and every move is recorded, so a run can be undone.</p>
+            <p>The command line is for running it. The terminal UI is for the files that need a person. It can also identify tracks by sound, handle cover art and build playlists.</p>
+          </div>
+        </section>
+
+        <section class="section" data-accent="yellow" aria-labelledby="hood-title">
+          <h2 id="hood-title">Under the hood</h2>
+          <div class="prose">
+            <ul>
+              <li><strong>One static binary</strong> for Windows and Linux on amd64 and arm64, with no C library needed.</li>
+              <li><strong>Never deletes an audio file.</strong> That is by design.</li>
+              <li><strong>Dry run first.</strong> See what a run would do before it moves anything.</li>
+              <li><strong>A database that migrates itself</strong> on upgrade, and keeps a backup of the old one.</li>
+              <li><strong>Filename collisions</strong> that differ only in letter case are handled.</li>
+              <li><strong>Characters Windows won't allow</strong> in names are replaced.</li>
+              <li><strong>CI on GitHub</strong> and checksummed releases.</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+
+      <section class="section" data-accent="blue" aria-labelledby="why-title">
+        <h2 id="why-title">Why I built it</h2>
+        <div class="prose">
+          <blockquote>
+            <p>I always want my music collection organized so that any music player can show me the info I want.</p>
+          </blockquote>
+          <p>I listen to too much music to not care about how I keep my music collection. Plus it felt natural with all the music players I have built over the years to help me learn programming.</p>
+          <p>Those were player-api in Go, go-player, a PHP player, and a Rails/TypeScript version, built between 2018 and 2023. tagshelf is where that thread led.</p>
+        </div>
+      </section>
+
+      <section class="section" data-accent="pink" aria-labelledby="get-title">
+        <h2 id="get-title">Get it</h2>
+        <div class="prose">
+          <p>The <a href="https://github.com/zachjamesgreen/tagshelf/releases">releases page</a> has downloads for Windows and Linux, and every release is checksummed. The <a href="https://github.com/zachjamesgreen/tagshelf">source is on GitHub</a>.</p>
+          <p>tagshelf is MIT licensed, still in active development, and at version 0.x.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <ul>
+        <li><a href="https://github.com/zachjamesgreen">GitHub</a></li>
+        <li><a href="https://www.linkedin.com/in/zachjamesgreen/">LinkedIn</a></li>
+        <li><a href="mailto:zachjamesgreen&#64;gmail&#46;com">zachjamesgreen&#64;gmail&#46;com</a></li>
+      </ul>
+      <p>Copyright 2026 Zach Green</p>
+    </footer>
+  </body>
+</html>
