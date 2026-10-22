@@ -33,7 +33,7 @@
         <h1 id="settlor-title">Settlor</h1>
         <p class="card__meta">Web Developer, <time datetime="2021-12-06">December 2021</time> to now</p>
         <p>Settlor is a title insurance and escrow company that runs on software it builds itself: an internal operations platform that covers title, closing, escrow accounting and e-recording, white-label portals for lenders and agents, and a public API. I've worked on that software for nearly five years.</p>
-        <p>My title is Web Developer, and the work covers the whole stack, from Flask and FastAPI services and the PostgreSQL behind them to Vue screens and the Docker images it all ships in. I've done more every year, and 2026 is my biggest year by far.</p>
+        <p>My title is Web Developer, and the work covers the whole stack: Flask and FastAPI services, PostgreSQL, Vue screens and Docker images. I've done more every year, and 2026 is my biggest year by far.</p>
         <p>Here's the stack. Parts of it are mid-move: Python to 3.14, SQLAlchemy to 2.0, and the frontend from Vue 2 and webpack to Vue 3 and Vite.</p>
         <dl class="settlor-facts">
           <div>
@@ -91,7 +91,7 @@
             </dd>
           </div>
         </dl>
-        <p>Settlor's code is private, so this page has no code and no screenshots, and it calls each part of the platform by what it does rather than by its name. Below are five pieces of work, each told as the problem, what I did, the stack and roughly how big it was. Commit counts are approximate.</p>
+        <p>This page has no code and no screenshots, and it calls each part of the platform by what it does rather than by its name. Below are five pieces of work, each told as the problem, what I did, the stack and roughly how big it was. Commit counts are approximate.</p>
       </section>
 
       <section class="card" id="modernization" data-accent="yellow" aria-labelledby="modernization-title">
@@ -101,19 +101,20 @@
           <div>
             <dt>The problem</dt>
             <dd class="prose">
-              <p>The whole platform needed to move to Python 3.14 on new Debian base images. Spread over about 23 repositories, that isn't one upgrade but one per repository, each with its own dependencies and its own ways of breaking, and none of them could change what the platform does.</p>
+              <p>The upgrade covers about 23 repositories, each moving to Python 3.14 on new Debian base images.</p>
+              <p>TODO(zach): why the platform needed this upgrade.</p>
             </dd>
           </div>
           <div>
             <dt>What I did</dt>
             <dd class="prose">
-              <p>I led the upgrade across all of them. That meant:</p>
+              <p>I led the upgrade across those repositories. That meant:</p>
               <ul>
                 <li>Moving to Python 3.14 on new Debian base images, and to Node 24.</li>
                 <li>Getting the codebase ready for SQLAlchemy 2.0.</li>
-                <li>Pinning dependencies to exact versions, so a build installs the same thing every time.</li>
-                <li>Gating image builds on vulnerability scans, so a failed scan stops the build.</li>
-                <li>Rebuilding the HTML-to-PDF binary for the new OS, with visual regression checks to catch any change in the PDFs it makes.</li>
+                <li>Pinning dependencies to exact versions.</li>
+                <li>Gating image builds on vulnerability scans.</li>
+                <li>Rebuilding the HTML-to-PDF binary for the new OS, with visual regression checks.</li>
                 <li>Building a separate regression-check suite just for the upgrade.</li>
               </ul>
             </dd>
@@ -147,7 +148,8 @@
           <div>
             <dt>The problem</dt>
             <dd class="prose">
-              <p>The platform runs in the cloud, but the printers are on office networks, where a cloud app can't reach them. Something has to live on that network, take jobs from the cloud and drive the printers.</p>
+              <p>Print jobs come from the cloud app, and the printers are at office sites.</p>
+              <p>TODO(zach): why the service had to run on site.</p>
             </dd>
           </div>
           <div>
@@ -155,8 +157,8 @@
             <dd class="prose">
               <p>I wrote a Windows service that gets installed at office sites. It receives print jobs from the cloud app and drives the local printers over IPP. It has:</p>
               <ul>
-                <li>A job queue with retry, so a job outlasts a printer that isn't answering.</li>
-                <li>Recovery when a worker thread dies, so the service keeps printing.</li>
+                <li>A job queue with retry.</li>
+                <li>Recovery when a worker thread dies.</li>
                 <li>A web admin page.</li>
                 <li>A signed installer, built with PyInstaller and Inno Setup.</li>
               </ul>
@@ -191,13 +193,14 @@
           <div>
             <dt>The problem</dt>
             <dd class="prose">
-              <p>The frontend is moving from Vue 2 and webpack to Vue 3, Vite, Pinia and TypeScript. Screens rebuilt in Vue 3 need a shared set of components to be built from, or each one solves the same problems its own way.</p>
+              <p>The frontend is moving from Vue 2 and webpack to Vue 3, Vite, Pinia and TypeScript, and there's an in-house Vue 3 design system.</p>
+              <p>TODO(zach): why the move, and what the design system is for.</p>
             </dd>
           </div>
           <div>
             <dt>What I did</dt>
             <dd class="prose">
-              <p>I'm the largest single contributor to both halves of this: the in-house Vue 3 design system that the new screens are built from, and moving screens off Vue 2.</p>
+              <p>I'm the largest single contributor to both halves of this: the in-house Vue 3 design system, and moving screens off Vue 2.</p>
               <p>TODO(zach): a component or pattern from the library worth calling out, described without internal names.</p>
             </dd>
           </div>
@@ -217,7 +220,7 @@
           <div>
             <dt>Scale</dt>
             <dd class="prose">
-              <p>About 400 of the design system's 1,300 commits.</p>
+              <p>About 400 of about 1,300 commits to the design system.</p>
             </dd>
           </div>
         </dl>
@@ -230,7 +233,8 @@
           <div>
             <dt>The problem</dt>
             <dd class="prose">
-              <p>Other people's code depends on a public API, so its schemas have to say exactly what it accepts and returns, and the code behind them has to be just as strict. This one is FastAPI with Pydantic v2, behind an API gateway.</p>
+              <p>The platform has a public API, built on FastAPI with Pydantic v2 behind an API gateway.</p>
+              <p>TODO(zach): why the schema move and type checking were needed.</p>
             </dd>
           </div>
           <div>
@@ -270,13 +274,14 @@
           <div>
             <dt>The problem</dt>
             <dd class="prose">
-              <p>An AI agent job runs in the background and won't do exactly the same thing twice. You need to see what it's doing while it runs, keep a record of every turn and what it cost, check what it writes, and test what happens when its input tries to give it new instructions.</p>
+              <p>The platform is adding AI features that run as background agent jobs, along with new developer tooling for the team.</p>
+              <p>TODO(zach): the problem behind this work, in a sentence or two.</p>
             </dd>
           </div>
           <div>
             <dt>What I'm building</dt>
             <dd class="prose">
-              <p>This is all in progress. So far:</p>
+              <p>This is all in progress. It includes:</p>
               <ul>
                 <li>A foundation for AI features: background agent jobs with live progress, a log of every turn, tracking of which model ran and what it cost, audits of what agents write, and eval fixtures that include prompt-injection tests.</li>
                 <li>The team's Claude Code plugin marketplace, with skills for guardrails, tickets, QA readiness and release notes.</li>

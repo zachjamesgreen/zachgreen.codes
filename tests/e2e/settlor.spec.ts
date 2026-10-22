@@ -59,6 +59,13 @@ test.describe("settlor", () => {
     });
   }
 
+  // §6.2 says what the service does, not why it has to run on site.
+  test("the print service section doesn't claim a cloud app can't reach office printers", async ({ page }) => {
+    const section = workstream(page, /remote print service/i);
+    await expect(section).toHaveCount(1);
+    await expect(section).not.toContainText(/can(no|')t reach/i);
+  });
+
   test("the AI section says the work is in progress", async ({ page }) => {
     await expect(workstream(page, /AI and developer tooling/i)).toContainText("in progress");
   });
