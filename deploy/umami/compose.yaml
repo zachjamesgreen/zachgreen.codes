@@ -1,0 +1,102 @@
+# Umami, the site's analytics, and its Postgres. Served at https://stats.zachgreen.codes
+# by deploy/nginx/stats.zachgreen.codes.conf.
+#
+# On the server this is /srv/umami/compose.yaml, next to the secrets in /srv/umami/.env
+# (root only). deploy/setup-umami.sh installs it, generates the .env once and starts the
+# stack. Nothing secret is in this file: every secret is a ${NAME:?} reference, filled
+# from that .env when compose reads this file, so compose stops if one is missing.
+# deploy/umami/.env.example lists them.
+#
+# Updates are by hand, about monthly: bump an image's tag and digest here, merge, pull on
+# the server, run deploy/setup-umami.sh again (README.md, Stats (Umami)). Get a digest
+# with `docker buildx imagetools inspect <image>:<tag>`.
+#
+# tests/unit/umami-compose.test.ts pins what matters below.
+
+name: umami
+
+services:
+  umami:
+    image: ghcr.io/umami-software/umami:3.4.0@sha256:85909afc45bdcda1917394594a087421fdbb05610fded0fa9f6fb861abb2f367
+    # Loopback only: nginx proxies to it. Docker's published ports bypass ufw, so this
+    # binding is what keeps port 3000 off the internet.
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      DATABASE_URL: postgresql://umami:${POSTGRES_PASSWORD:?is not set in .env}@db:5432/umami
+      APP_SECRET: ${APP_SECRET:?is not set in .env}
+      # Encrypts the secrets of two-factor logins, so 2FA can be turned on.
+      TWO_FACTOR_ENCRYPTION_KEY: ${TWO_FACTOR_ENCRYPTION_KEY:?is not set in .env}
+      # The site loads the tracker from /insights, a name ad-block lists don't match the
+      # way they match Umami's usual ones. (/script.js still works too.)
+      TRACKER_SCRIPT_NAME: insights
+      DISABLE_TELEMETRY: "1"
+      # The client's address, as nginx sets it. Without this, Umami takes the first of a
+      # list of headers, most of which the client can set itself (True-Client-IP, ...).
+      CLIENT_IP_HEADER: x-real-ip
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [default, db]
+    init: true
+    # unless-stopped: the containers come back after the box's unattended-upgrade reboots.
+    restart: unless-stopped
+    mem_limit: 512m
+    read_only: true
+    # Next.js writes its cache under .next/cache. The image runs as nextjs (uid 1001).
+    tmpfs:
+      - /tmp:size=16m
+      - /app/.next/cache:size=64m,uid=1001,gid=65533,mode=0700
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:3000/api/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  db:
+    # Postgres 18 keeps its data in /var/lib/postgresql/18/docker, under the volume below.
+    image: postgres:18.6-alpine3.24@sha256:898c60cb390d1085bc97bdd6a1ae968757421df394b071848b52b1c09c89d6a5
+    environment:
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?is not set in .env}
+    # No backups, by design: if this volume is lost, the stats start again from zero.
+    volumes:
+      - umami-db:/var/lib/postgresql
+    # No published ports, and a network with no way out that only Umami shares.
+    networks: [db]
+    restart: unless-stopped
+    mem_limit: 256m
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+      - /var/run/postgresql:size=1m
+    cap_drop: [ALL]
+    # What the entrypoint needs to set up the data directory and drop to the postgres user.
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "umami", "-d", "umami"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+networks:
+  db:
+    internal: true
+
+volumes:
+  umami-db:

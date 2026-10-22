@@ -57,6 +57,11 @@ BROTLI_PKG=libnginx-mod-http-brotli-filter
 LOCK=/run/zachgreen-codes-setup-site.lock
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)
 BACKUP=/root/nginx-backup-$STAMP
+# What the preamble below says. It is word for word the same as setup-umami.sh's, and
+# tests/unit/setup-scripts-shared.test.ts keeps the two that way.
+RUN_WITH="sudo bash $0"
+OWNER_ROLE="is to own the site's clone"
+LOG_NAME=03-site-log.txt
 
 # Repo file : server path. The site file goes last, after the files it includes.
 FILES=(
@@ -275,13 +280,17 @@ rollback() {
   info "Log:    $LOG"
 }
 
+# What on_exit does when there is nothing to roll back: a run that stops before it has
+# used its temporary clone deletes it.
+exit_cleanup() { [[ $STATE != checking ]] || remove_stage; }
+
+# Word for word the same as setup-umami.sh's (tests/unit/setup-scripts-shared.test.ts).
 on_exit() {
   # First, so a second Ctrl-C can't cut the rollback short ($? is read in the same line).
   local status=$?; trap '' INT TERM
   case $STATE in
     changing) rollback; (( status != 0 )) || status=1 ;;
-    checking) remove_stage ;;
-    *) ;;
+    *) exit_cleanup "$status" ;;
   esac
   # Let tee write out the end of the log before the shell (and the SSH session) goes.
   if [[ -n $TEE_PID ]]; then
@@ -292,19 +301,19 @@ on_exit() {
 }
 
 if (( EUID != 0 )); then
-  echo "Run this with sudo: sudo bash $0" >&2
+  echo "Run this with sudo: $RUN_WITH" >&2
   exit 1
 fi
 # The clone's owner is whoever ran sudo, and the log goes in their home.
 OWNER=${SUDO_USER:-}
 if [[ -z $OWNER || $OWNER == root ]] || ! getent passwd "$OWNER" >/dev/null; then
-  echo "Run this with sudo from the account that is to own the site's clone, not as root itself (SUDO_USER is '${SUDO_USER:-}')." >&2
+  echo "Run this with sudo from the account that $OWNER_ROLE, not as root itself (SUDO_USER is '${SUDO_USER:-}')." >&2
   exit 1
 fi
 OWNER_HOME=$(getent passwd "$OWNER" | cut -d: -f6)
 OWNER_GROUP=$(id -gn "$OWNER")
 LOG_DIR=$OWNER_HOME/setup
-LOG=$LOG_DIR/03-site-log.txt
+LOG=$LOG_DIR/$LOG_NAME
 # root appends to the log, so it mustn't be a link to some other file.
 if [[ ! -d $OWNER_HOME || -L $LOG_DIR || -L $LOG ]]; then
   echo "$OWNER's home ($OWNER_HOME) is missing, or $LOG_DIR or $LOG is a symlink." >&2
