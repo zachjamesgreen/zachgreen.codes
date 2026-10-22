@@ -884,6 +884,66 @@
   }
 
   /* page: resume */
+
+  /* On screen. The printed page and the PDF use css/print.css on top of this. */
+
+  /* Name, title, summary, contact links and the PDF button in one block. */
+  .resume-intro {
+    gap: var(--space-4);
+
+    & > .actions {
+      margin-block-start: var(--space-3);
+    }
+  }
+
+  .resume-intro__lead {
+    font-size: clamp(var(--size-md), 0.9rem + 1.5cqi, var(--size-lg));
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  /* Each link shows its own address, so it still reads on paper. On a phone
+     the longest one is wider than the card, so it may break anywhere. */
+  .resume-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-5);
+    padding: 0;
+    list-style: none;
+
+    & a {
+      display: inline-block;
+      padding-block: var(--space-1);
+      font-size: var(--size-sm);
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  /* The project beside skills and education, when both fit. */
+  .resume-split {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+    gap: var(--space-8) var(--space-7);
+    align-items: start;
+  }
+
+  .resume-side {
+    display: grid;
+    gap: var(--space-8);
+  }
+
+  /* Each skill group: its name, then the list. */
+  .resume-skills {
+    display: grid;
+    gap: var(--space-3);
+
+    & dt {
+      font-size: var(--size-sm);
+      font-weight: 700;
+      color: var(--ink-muted);
+    }
+  }
 }
 
 @layer utilities {

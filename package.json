@@ -9,6 +9,7 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
     "dev": "node scripts/serve.ts --root site --port 4321",
+    "resume:pdf": "node scripts/resume-pdf.ts",
     "lint": "html-validate site tests/e2e/fixtures && stylelint \"site/css/**/*.css\" && tsc && node scripts/check-no-fonts.ts && node scripts/check-content.ts",
     "test:unit": "node --test \"tests/unit/**/*.test.ts\"",
     "test:e2e": "playwright test",
