@@ -3,16 +3,19 @@
 
 import { expect, test } from "@playwright/test";
 
-/** The timeline in order: where each entry starts (its first <time>), and what it must name. */
-const ENTRIES = [
+/**
+ * The timeline in order: where each entry starts (its first <time>), what it must name, and
+ * whether it has no line about the work (Bluegrass Lounge has none yet, so it shows only its role, place and dates).
+ */
+const ENTRIES: readonly { start: string; names: readonly RegExp[]; noLine?: true }[] = [
   { start: "2010-02", names: [/Navy/, /Hospital Corpsman/] },
   { start: "2015-03", names: [/ShipOffers/] },
   { start: "2019-01", names: [/Blake Street Tavern/] },
-  { start: "2020-09", names: [/Bluegrass Lounge/] },
+  { start: "2020-09", names: [/Bluegrass Lounge/], noLine: true },
   { start: "2021-02", names: [/Turing School/] },
   { start: "2021-09", names: [/Fairwinds Ops/] },
   { start: "2021-12-06", names: [/Settlor/] },
-] as const;
+];
 
 test.describe("about", () => {
   test.beforeEach(async ({ page }) => {
@@ -34,15 +37,23 @@ test.describe("about", () => {
     }
   });
 
-  test("each timeline entry has a role heading, a place and a line about the work", async ({ page }) => {
+  test("each timeline entry has a role heading, a place and a line about the work, except where there is none yet", async ({ page }) => {
     const items = page.locator(".timeline > li");
-    for (let index = 0; index < ENTRIES.length; index++) {
+    for (const [index, { noLine }] of ENTRIES.entries()) {
       const item = items.nth(index);
+      const line = item.locator("p:not(.timeline__when):not(.muted)");
       await expect(item.locator("h3"), `entry ${index + 1} role`).toHaveCount(1);
       await expect(item.locator("h3"), `entry ${index + 1} role`).not.toBeEmpty();
       await expect(item.locator("p.muted"), `entry ${index + 1} place`).toHaveCount(1);
-      await expect(item.locator("p:not(.timeline__when):not(.muted)").first(), `entry ${index + 1} text`).not.toBeEmpty();
+      if (noLine) await expect(line, `entry ${index + 1} has no line about the work`).toHaveCount(0);
+      else await expect(line.first(), `entry ${index + 1} text`).not.toBeEmpty();
     }
+  });
+
+  test("no timeline paragraph is empty, so no entry has a stray gap", async ({ page }) => {
+    const paragraphs = await page.locator(".timeline > li p").allTextContents();
+    expect(paragraphs.length).toBeGreaterThan(0);
+    for (const text of paragraphs) expect(text.trim(), "an empty <p> in the timeline").not.toBe("");
   });
 
   test("ShipOffers runs from March 2015 to October 2016", async ({ page }) => {
