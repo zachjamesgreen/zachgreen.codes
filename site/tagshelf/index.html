@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>tagshelf - a music library tool by Zach Green</title>
-    <meta name="description" content="tagshelf is a Go tool by Zach Green that sorts a music library by its tags, sets duplicates aside instead of deleting them, and can undo every run. For Windows and Linux.">
+    <meta name="description" content="tagshelf is a Go tool by Zach Green that sorts a music library by its tags, sets identical copies aside instead of deleting them, and can undo every run. For Windows and Linux.">
     <link rel="canonical" href="https://zachgreen.codes/tagshelf/">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="zachgreen.codes">
     <meta property="og:title" content="tagshelf - a music library tool by Zach Green">
-    <meta property="og:description" content="tagshelf is a Go tool by Zach Green that sorts a music library by its tags, sets duplicates aside instead of deleting them, and can undo every run. For Windows and Linux.">
+    <meta property="og:description" content="tagshelf is a Go tool by Zach Green that sorts a music library by its tags, sets identical copies aside instead of deleting them, and can undo every run. For Windows and Linux.">
     <meta property="og:url" content="https://zachgreen.codes/tagshelf/">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="theme-color" content="#17171c">
@@ -31,7 +31,7 @@
     <main id="main" tabindex="-1">
       <section class="card" data-accent="blue" aria-labelledby="intro-title">
         <h1 id="intro-title">tagshelf</h1>
-        <p class="tagshelf-lead">Sorts a music library by its tags, sets duplicates aside instead of deleting them, and can undo every run.</p>
+        <p class="tagshelf-lead">Sorts a music library by its tags, sets identical copies aside instead of deleting them, and can undo every run.</p>
         <p>A command-line tool and terminal UI, written in Go, for Windows and Linux.</p>
         <ul class="tag-list">
           <li class="tag">Go</li>
@@ -82,7 +82,7 @@ Fixture Artist - Silence Café  release-track, 2 copies
           <h2 id="hood-title">Under the hood</h2>
           <div class="prose">
             <ul>
-              <li><strong>One static binary</strong> for Windows and Linux on amd64 and arm64, with no C library needed.</li>
+              <li><strong>Static builds</strong> for Windows (amd64) and Linux (amd64 and arm64), with no C library needed.</li>
               <li><strong>Never deletes an audio file.</strong> That is by design.</li>
               <li><strong>Dry run first.</strong> See what a run would do before it moves anything.</li>
               <li><strong>A database that migrates itself</strong> on upgrade, and keeps a backup of the old one.</li>
