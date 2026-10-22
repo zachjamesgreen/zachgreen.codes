@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Components - zachgreen.codes design system</title>
+    <meta name="description" content="A test-only page that uses every component in site.css.">
+    <link rel="stylesheet" href="/css/site.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="skip-link" href="#main">Skip to content</a>
+      <a class="site-brand" href="/">zachgreen.codes</a>
+      <nav class="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="/#work">Work</a></li>
+          <li><a href="/about/" aria-current="page">About</a></li>
+          <li><a href="/resume/">Resume</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <section class="card" data-accent="yellow" aria-labelledby="hero-title">
+        <h1 id="hero-title">Zach Green</h1>
+        <p>Full-stack developer at Settlor. I like knowing <em>why</em> things work, and I keep my tools sharp and my dependencies current.</p>
+        <div class="actions">
+          <a class="btn" href="#work">See my work</a>
+          <a class="btn btn--alt" href="/resume/">Resume</a>
+          <button class="btn" type="button">A real button</button>
+        </div>
+      </section>
+
+      <section class="section" id="work" data-accent="blue" aria-labelledby="work-title">
+        <h2 id="work-title">Work</h2>
+        <div class="card-grid">
+          <article class="card" data-accent="pink">
+            <h3><a class="card__link" href="/settlor/">Settlor</a></h3>
+            <p class="card__meta">Web Developer since December 2021</p>
+            <p>Five workstreams on a production platform, from a Vue 3 component library to a public API.</p>
+            <ul class="tag-list">
+              <li class="tag">Vue 3</li>
+              <li class="tag">TypeScript</li>
+              <li class="tag">Python</li>
+            </ul>
+          </article>
+          <article class="card" data-accent="blue">
+            <h3><a class="card__link" href="/tagshelf/">tagshelf</a></h3>
+            <p class="card__meta">Open source, Windows and Linux</p>
+            <p>Sorts a music library by its tags, sets duplicates aside and can undo every run.</p>
+            <ul class="tag-list">
+              <li class="tag">Go</li>
+              <li class="tag">TUI</li>
+              <li class="tag">MusicBrainz</li>
+              <li class="tag">CLI</li>
+            </ul>
+          </article>
+          <article class="card" data-accent="yellow">
+            <h3>A card without a link</h3>
+            <p>It stays put on hover, because there is nothing to press.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" data-accent="pink" aria-labelledby="prose-title">
+        <h2 id="prose-title">Prose</h2>
+        <div class="prose">
+          <p>Long-form text is set in MonoLisa at a comfortable measure. Links such as <a href="https://github.com/zachjamesgreen/tagshelf">the tagshelf repo</a> get an accent underline, <strong>strong text</strong> is bold, and <code>tagshelf -dry-run</code> uses the italic.</p>
+          <h3>A subheading</h3>
+          <p>Paragraphs after a heading sit close to it. Lists get square markers in the section's accent:</p>
+          <ul>
+            <li>One static program for Windows and Linux.</li>
+            <li>A database that migrates itself and keeps a backup.</li>
+            <li>It never deletes an audio file.</li>
+          </ul>
+          <ol>
+            <li>Preview with a dry run.</li>
+            <li>Run it.</li>
+            <li>Undo it if you change your mind.</li>
+          </ol>
+          <blockquote>
+            <p>I always want my music collection organized so that any music player can show me the info I want.</p>
+          </blockquote>
+        </div>
+      </section>
+
+      <section class="section" data-accent="blue" aria-labelledby="tui-title">
+        <h2 id="tui-title">Terminal UI</h2>
+        <pre class="tui-frame" role="group" aria-label="tagshelf terminal UI, Duplicates tab" tabindex="0">
+ tagshelf  T:\Music  library 345d9616
+ 1 Home   2 Untagged 2   3 Duplicates 1   4 Library   5 Runs   6 Settings   7 Files
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Duplicates (1 group to review)
+  Song                                  Kind           Copies  Keeps
+› Fixture Artist - Silence Café         release-track       2  …bum (2001)\1-03 - Silence Café.flac
+
+Fixture Artist - Silence Café  release-track, 2 copies
+  ★ library    Fixture Album Artist\Fixture Album (2001)\1-03 - Silence Café.flac
+               FLAC  lossless 8 kHz/16       0:01  Fixture Artist / Fixture Album / Silence Café
+    library    Fixture Album Artist\Fixture Album (2001)\1-03 - Silence Café.mp3
+               MP3   8 kbps 8 kHz            0:01  Fixture Artist / Fixture Album / Silence Café
+
+
+↑↓/n select  k keeper  enter resolve  b keep both  c confirm  A all exact   1-7 tabs  R reload  ? h…</pre>
+      </section>
+
+      <section class="section" data-accent="yellow" aria-labelledby="timeline-title">
+        <h2 id="timeline-title">Timeline</h2>
+        <ol class="timeline">
+          <li>
+            <p class="timeline__when"><time datetime="2010-02">Feb 2010</time> to <time datetime="2015-02">Feb 2015</time></p>
+            <h3>Hospital Corpsman</h3>
+            <p class="muted">United States Navy</p>
+            <p>Emergency, standard and routine medical treatment for service members.</p>
+          </li>
+          <li>
+            <p class="timeline__when"><time datetime="2021-02">Feb 2021</time> to <time datetime="2021-10">Oct 2021</time></p>
+            <h3>Back-End Engineering</h3>
+            <p class="muted">Turing School of Software and Design</p>
+            <p>Student Leadership Committee Representative.</p>
+          </li>
+          <li>
+            <p class="timeline__when"><time datetime="2021-12-06">Dec 2021</time> to now</p>
+            <h3>Web Developer</h3>
+            <p class="muted">Settlor</p>
+            <p>A long entry wraps onto a second line so the rail and its markers can be checked against more than one line of text.</p>
+          </li>
+        </ol>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <ul>
+        <li><a href="https://github.com/zachjamesgreen">GitHub</a></li>
+        <li><a href="https://www.linkedin.com/in/zachjamesgreen/">LinkedIn</a></li>
+        <li><a href="mailto:&#104;&#101;&#108;&#108;&#111;&#64;example.com">Email</a></li>
+      </ul>
+      <p>No cookies, no tracking. Copyright 2026 Zach Green</p>
+    </footer>
+  </body>
+</html>
