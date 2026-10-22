@@ -3,8 +3,9 @@
 //
 // Everything the config references but the repo doesn't own is a stand-in written into a
 // temp dir: Ubuntu's stock nginx.conf, the server's catch-all default_server, certbot's
-// options-ssl-nginx.conf and ssl-dhparams.pem, and a self-signed certificate. The site is
-// a copy of the repo's site/, plus a stub font file and the privacy probes.
+// options-ssl-nginx.conf and ssl-dhparams.pem, self-signed certificates, and a stub of
+// Umami on 127.0.0.1:3000 for the stats vhost to proxy to. The site is a copy of the
+// repo's site/, plus a stub font file and the privacy probes.
 
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
@@ -15,7 +16,7 @@ import { after, before, test } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import { promisify } from "node:util";
 
-import { runAssertions } from "./assertions.ts";
+import { runAssertions, runStatsAssertions } from "./assertions.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -89,6 +90,36 @@ ssl_prefer_server_ciphers off;
 ssl_ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384";
 `;
 
+// Stands in for Umami behind the stats vhost: the upstream at 127.0.0.1:3000 inside the
+// container. Like Umami, it sends its own CSP, the CORS header the tracker needs, and an
+// X-Powered-By that nginx must hide. /insights and /login answer as Umami's would; any
+// other path answers with the proxy headers it was sent, so the test can check them.
+const UMAMI_STUB = `server {
+    listen 127.0.0.1:3000;
+    server_name _;
+    server_tokens off;
+
+    add_header Content-Security-Policy "default-src 'self'; frame-ancestors 'self';" always;
+    add_header Access-Control-Allow-Origin "*" always;
+    add_header X-Powered-By "Next.js" always;
+
+    location = /insights {
+        default_type application/javascript;
+        return 200 "/* stub tracker */";
+    }
+
+    location = /login {
+        default_type text/html;
+        return 200 "<!DOCTYPE html><title>Stub login</title>";
+    }
+
+    location / {
+        default_type application/json;
+        return 200 '{"host":"$http_host","xRealIp":"$http_x_real_ip","xForwardedFor":"$http_x_forwarded_for","xForwardedProto":"$http_x_forwarded_proto"}';
+    }
+}
+`;
+
 const STUB_PAGE = `<!DOCTYPE html>
 <html lang="en">
   <head><meta charset="utf-8"><title>Stub</title></head>
@@ -117,15 +148,22 @@ before(async () => {
   for (const snippet of ["security-headers.conf", "zachgreen-compression.conf"]) {
     await copy(join(CONF, "snippets", snippet), join(etcNginx, "snippets", snippet));
   }
+  // The stats host (Umami), as deploy/setup-umami.sh installs it, and the stub upstream.
+  await copy(join(CONF, "stats.zachgreen.codes.conf"), join(etcNginx, "sites-enabled/stats.zachgreen.codes"));
+  await copy(join(CONF, "conf.d/zachgreen-umami.conf"), join(etcNginx, "conf.d/zachgreen-umami.conf"));
+  await put(join(etcNginx, "sites-enabled/umami-stub"), UMAMI_STUB);
 
-  // Let's Encrypt files.
-  const live = join(letsencrypt, "live/zachgreen.codes");
-  await mkdir(live, { recursive: true });
-  await openssl(
-    "req", "-x509", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:P-256", "-noenc", "-days", "2",
-    "-subj", "/CN=zachgreen.codes", "-addext", "subjectAltName=DNS:zachgreen.codes,DNS:www.zachgreen.codes",
-    "-keyout", join(live, "privkey.pem"), "-out", join(live, "fullchain.pem"),
-  );
+  // Let's Encrypt files: a self-signed certificate per lineage.
+  const certificates = { "zachgreen.codes": "DNS:zachgreen.codes,DNS:www.zachgreen.codes", "stats.zachgreen.codes": "DNS:stats.zachgreen.codes" };
+  for (const [name, names] of Object.entries(certificates)) {
+    const live = join(letsencrypt, "live", name);
+    await mkdir(live, { recursive: true });
+    await openssl(
+      "req", "-x509", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:P-256", "-noenc", "-days", "2",
+      "-subj", `/CN=${name}`, "-addext", `subjectAltName=${names}`,
+      "-keyout", join(live, "privkey.pem"), "-out", join(live, "fullchain.pem"),
+    );
+  }
   // certbot's ssl-dhparams.pem is this group too (RFC 7919 ffdhe2048).
   await openssl("genpkey", "-genparam", "-algorithm", "DH", "-pkeyopt", "group:ffdhe2048", "-out", join(letsencrypt, "ssl-dhparams.pem"));
   await put(join(letsencrypt, "options-ssl-nginx.conf"), CERTBOT_SSL_OPTIONS);
@@ -180,6 +218,17 @@ test("the site config passes the shared assertions", async () => {
     insecureTls: true,
     expectBrotli: false,
     fontPath: `/${FONT_STUB}`,
+  });
+});
+
+test("the stats config passes the shared stats assertions", async () => {
+  assert.ok(container, "the container didn't start");
+  await runStatsAssertions({
+    base: `https://stats.zachgreen.codes:${ports.https}`,
+    httpBase: `http://stats.zachgreen.codes:${ports.http}`,
+    resolveTo: "127.0.0.1",
+    insecureTls: true,
+    echoUpstream: true,
   });
 });
 
