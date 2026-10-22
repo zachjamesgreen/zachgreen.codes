@@ -40,7 +40,7 @@ describe("check-no-fonts CLI", () => {
   const dirs: string[] = [];
 
   // Isolated from the developer's git config (identity, global ignore rules, hooks).
-  const env = {
+  const env: NodeJS.ProcessEnv = {
     ...process.env,
     GIT_CONFIG_GLOBAL: "/dev/null",
     GIT_CONFIG_NOSYSTEM: "1",
@@ -49,6 +49,10 @@ describe("check-no-fonts CLI", () => {
     GIT_COMMITTER_NAME: "Test",
     GIT_COMMITTER_EMAIL: "test@example.com",
   };
+  // And from the repo the tests run in: a git hook, or a linked worktree's tooling,
+  // sets these to point at it, and inherited they would aim every git call below at
+  // that repo instead of the temp one.
+  for (const name of ["GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_OBJECT_DIRECTORY"]) delete env[name];
 
   function git(cwd: string, ...args: string[]) {
     const res = spawnSync("git", args, { cwd, env, encoding: "utf8" });

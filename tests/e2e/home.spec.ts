@@ -57,7 +57,10 @@ test.describe("home", () => {
   });
 
   // Only identical copies are set aside on their own; other duplicates go to a person in the TUI.
-  test("the tagshelf card says identical copies, not duplicates, are set aside, and so do no descriptions", async ({ page }) => {
+  // The meta descriptions never said "duplicates aside": they are checked so they never start to.
+  test("the tagshelf card says identical copies, not duplicates, are set aside; the meta descriptions are regression guards", async ({
+    page,
+  }) => {
     const summary = page
       .locator("#work .card")
       .filter({ has: page.locator('a.card__link[href="/tagshelf/"]') })
