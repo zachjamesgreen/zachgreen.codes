@@ -9,12 +9,18 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
     "dev": "node scripts/serve.ts --root site --port 4321",
-    "lint": "html-validate site && stylelint \"site/css/**/*.css\" --allow-empty-input && tsc && node scripts/check-no-fonts.ts && node scripts/check-content.ts",
+    "lint": "html-validate site tests/e2e/fixtures && stylelint \"site/css/**/*.css\" && tsc && node scripts/check-no-fonts.ts && node scripts/check-content.ts",
     "test:unit": "node --test \"tests/unit/**/*.test.ts\"",
+    "test:e2e": "playwright test",
     "check": "pnpm lint && pnpm test:unit"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@capsizecss/unpack": "4.0.1",
+    "@playwright/test": "1.64.1",
+    "@types/culori": "4.0.1",
     "@types/node": "24.19.2",
+    "culori": "4.0.2",
     "html-validate": "11.17.0",
     "stylelint": "17.16.0",
     "stylelint-config-standard": "40.0.0",

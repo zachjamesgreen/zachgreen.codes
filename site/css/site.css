@@ -1,0 +1,777 @@
+/*
+ * zachgreen.codes design system (spec §5): dark neo-brutalism, "dark cards,
+ * candy shadows". Dark blocks with thick off-white borders, square corners,
+ * and hard offset shadows with no blur. Color lives in the shadows and the
+ * headings, and each block gets one accent.
+ *
+ * Served as written: no build step, no inline styles (the CSP is
+ * `style-src 'self'`). Page-specific rules go in the `pages` layer.
+ */
+
+@layer reset, tokens, fonts, base, components, pages, utilities;
+
+/* Cross-document view transitions (spec §4): the default cross-fade, a little
+   quicker, and only for visitors who haven't asked for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+
+  ::view-transition-group(root) {
+    animation-duration: 0.2s;
+  }
+}
+
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  * {
+    margin: 0;
+  }
+
+  img,
+  picture,
+  svg,
+  video {
+    display: block;
+    max-inline-size: 100%;
+  }
+
+  input,
+  button,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+@layer tokens {
+  :root {
+    /* Color, in oklch() from the spec's hex values. The ratios are WCAG 2
+       contrast measured with culori; tests/unit/contrast.test.ts checks every
+       pair and every number written here. */
+    --bg: oklch(20.7% 0.01 285deg); /* the page, ≈ #17171c */
+    --surface: oklch(26.4% 0.015 285deg); /* cards and the header, ≈ #24242c */
+    --sunken: oklch(16.5% 0.008 285deg); /* the terminal frame, ≈ #0e0e12 */
+    --ink: oklch(96.1% 0 0deg); /* 15.94:1 on --bg, 13.74:1 on --surface, 17.21:1 on --sunken */
+    --ink-muted: oklch(76% 0.018 285deg); /* 8.29:1 on --bg, 7.14:1 on --surface */
+    --line: oklch(96.1% 0 0deg); /* 15.94:1 on --bg, 13.74:1 on --surface */
+    --accent-yellow: oklch(87.8% 0.16 91deg); /* 12.33:1 on --bg, 10.63:1 on --surface */
+    --accent-pink: oklch(73.8% 0.2 343.6deg); /* 6.98:1 on --bg, 6.02:1 on --surface */
+    --accent-blue: oklch(76.8% 0.123 250deg); /* 8.6:1 on --bg, 7.41:1 on --surface */
+    --on-accent: oklch(17.5% 0.006 285deg); /* 13.11:1 on --accent-yellow, 7.42:1 on --accent-pink, 9.14:1 on --accent-blue, 16.94:1 on --ink */
+
+    /* --accent, the accent of the block you're in, is set by [data-accent]
+       (components layer); where it's unset, components fall back to --line
+       or --ink. The focus ring is always yellow, the loudest on dark. */
+    --focus: var(--accent-yellow);
+
+    /* Shape. The shadow is the block-sized one; smaller things scale it. */
+    --border-w: 3px;
+    --shadow-x: 8px;
+    --shadow-y: 8px;
+
+    /* Type. Each stack falls back to a local monospace font that is resized
+       to take up the same space as the web font (see the fonts layer). */
+    --font-display: "Calling Code", "Calling Code Fallback", ui-monospace, monospace;
+    --font-body: "MonoLisa", "MonoLisa Fallback", ui-monospace, monospace;
+    --size-xs: 0.8125rem;
+    --size-sm: 0.875rem;
+    --size-md: 1rem;
+    --size-lg: 1.3125rem;
+    --size-xl: clamp(1.5rem, 1.3rem + 0.8vw, 1.75rem);
+    --size-2xl: clamp(1.75rem, 1.35rem + 1.8vw, 2.5rem);
+    --size-3xl: clamp(2.25rem, 1.4rem + 4vw, 4.5rem);
+    --leading: 1.6;
+    --leading-tight: 1.1;
+    --measure: 68ch;
+
+    /* Spacing. */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-7: 3rem;
+    --space-8: 4rem;
+    --gutter: clamp(var(--space-4), 4vw, var(--space-7));
+    --page-max: 72rem;
+
+    /* Motion: every transition uses this, so reduced motion turns all of them off. */
+    --motion: 120ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --motion: 0s;
+    }
+  }
+}
+
+/*
+ * Fonts (spec §5.3). The files live in /fonts/, which is never committed.
+ *
+ * MonoLisa ships as subsets that hold only the glyphs inside their
+ * unicode-range. The site uses three, normal and italic: Basic Latin, box
+ * drawing (the terminal snapshot) and Miscellaneous Symbols. Anything else,
+ * such as é, — or ★, comes from "MonoLisa Fallback", which is sized to the
+ * same advance width so terminal columns stay aligned.
+ * scripts/font-metrics.ts keeps MONOLISA_RANGES in step with these rules.
+ *
+ * The fallback faces are local monospace fonts with size-adjust and
+ * ascent/descent/line-gap overrides from `node scripts/font-metrics.ts`
+ * (Capsize's method, measured against DejaVu Sans Mono), so swapping in the
+ * real fonts doesn't move the layout. Menlo has DejaVu Sans Mono's metrics,
+ * and Liberation Mono and Courier New are within 0.3% of them. The bold faces
+ * end with bare family names because WebKit on Linux matches local() by family
+ * and finds none of the bold face names.
+ */
+@layer fonts {
+  @font-face {
+    font-family: "Calling Code";
+    src: url("/fonts/callingcode-regular-webfont.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Calling Code";
+    src: url("/fonts/callingcode-bold-webfont.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Calling Code";
+    src: url("/fonts/callingcode-italic-webfont.woff2") format("woff2");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Calling Code";
+    src: url("/fonts/callingcode-bolditalic-webfont.woff2") format("woff2");
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: MonoLisa;
+    src: url("/fonts/0-MonoLisaCode-normal.woff2") format("woff2");
+    font-weight: 1 900;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+0020-007F;
+  }
+
+  @font-face {
+    font-family: MonoLisa;
+    src: url("/fonts/1-MonoLisaCode-italic.woff2") format("woff2");
+    font-weight: 1 900;
+    font-style: italic;
+    font-display: swap;
+    unicode-range: U+0020-007F;
+  }
+
+  @font-face {
+    font-family: MonoLisa;
+    src: url("/fonts/20-MonoLisaCode-normal.woff2") format("woff2");
+    font-weight: 1 900;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+2500-257F;
+  }
+
+  @font-face {
+    font-family: MonoLisa;
+    src: url("/fonts/21-MonoLisaCode-italic.woff2") format("woff2");
+    font-weight: 1 900;
+    font-style: italic;
+    font-display: swap;
+    unicode-range: U+2500-257F;
+  }
+
+  @font-face {
+    font-family: MonoLisa;
+    src: url("/fonts/2-MonoLisaCode-normal.woff2") format("woff2");
+    font-weight: 1 900;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+2600-26FF;
+  }
+
+  @font-face {
+    font-family: MonoLisa;
+    src: url("/fonts/3-MonoLisaCode-italic.woff2") format("woff2");
+    font-weight: 1 900;
+    font-style: italic;
+    font-display: swap;
+    unicode-range: U+2600-26FF;
+  }
+
+  @font-face {
+    font-family: "MonoLisa Fallback";
+    src:
+      local("Menlo Regular"), local("Menlo-Regular"), local("DejaVu Sans Mono"), local("DejaVuSansMono"),
+      local("Liberation Mono"), local("LiberationMono"), local("Courier New"), local("CourierNewPSMT");
+    font-weight: 400;
+    size-adjust: 106.3%;
+    ascent-override: 97.83%;
+    descent-override: 31.98%;
+    line-gap-override: 0%;
+  }
+
+  @font-face {
+    font-family: "MonoLisa Fallback";
+    src:
+      local("Menlo Bold"), local("Menlo-Bold"), local("DejaVu Sans Mono Bold"), local("DejaVuSansMono-Bold"),
+      local("Liberation Mono Bold"), local("LiberationMono-Bold"), local("Courier New Bold"), local("CourierNewPS-BoldMT"),
+      local("DejaVu Sans Mono"), local("Liberation Mono");
+    font-weight: 700;
+    size-adjust: 106.3%;
+    ascent-override: 97.83%;
+    descent-override: 31.98%;
+    line-gap-override: 0%;
+  }
+
+  @font-face {
+    font-family: "Calling Code Fallback";
+    src:
+      local("Menlo Regular"), local("Menlo-Regular"), local("DejaVu Sans Mono"), local("DejaVuSansMono"),
+      local("Liberation Mono"), local("LiberationMono"), local("Courier New"), local("CourierNewPSMT");
+    font-weight: 400;
+    size-adjust: 92.94%;
+    ascent-override: 102.23%;
+    descent-override: 32.47%;
+    line-gap-override: 0%;
+  }
+
+  @font-face {
+    font-family: "Calling Code Fallback";
+    src:
+      local("Menlo Bold"), local("Menlo-Bold"), local("DejaVu Sans Mono Bold"), local("DejaVuSansMono-Bold"),
+      local("Liberation Mono Bold"), local("LiberationMono-Bold"), local("Courier New Bold"), local("CourierNewPS-BoldMT"),
+      local("DejaVu Sans Mono"), local("Liberation Mono");
+    font-weight: 700;
+    size-adjust: 92.94%;
+    ascent-override: 102.23%;
+    descent-override: 34.36%;
+    line-gap-override: 0%;
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    line-height: var(--leading);
+    scroll-padding-block-start: var(--space-5);
+  }
+
+  body {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-7);
+    min-block-size: 100svh;
+    max-inline-size: var(--page-max);
+    margin-inline: auto;
+    padding: var(--space-5) var(--gutter) var(--space-6);
+    overflow-wrap: break-word;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: var(--space-8);
+
+    /* The skip link's target. It takes focus, but it isn't a control. */
+    &:focus {
+      outline: none;
+    }
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    color: var(--accent, var(--ink));
+    text-wrap: balance;
+  }
+
+  h1 {
+    font-size: var(--size-3xl);
+  }
+
+  h2 {
+    font-size: var(--size-2xl);
+  }
+
+  h3 {
+    font-size: var(--size-xl);
+  }
+
+  h4 {
+    font-size: var(--size-lg);
+  }
+
+  p,
+  li,
+  dd {
+    text-wrap: pretty;
+  }
+
+  a {
+    color: inherit;
+    text-decoration-line: underline;
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--accent, var(--accent-blue));
+    text-underline-offset: 0.2em;
+
+    &:hover {
+      text-decoration-thickness: 4px;
+    }
+  }
+
+  /* As loud as everything else (spec §5.1): a thick accent ring, offset so it
+     never merges with a border. */
+  :focus-visible {
+    outline: var(--border-w) solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: var(--font-body);
+    font-size: 1em;
+  }
+
+  /* MonoLisa's italic is its script face, which sets code apart in running text. */
+  code {
+    font-style: italic;
+  }
+
+  strong,
+  b {
+    font-weight: 700;
+  }
+
+  small {
+    font-size: var(--size-sm);
+  }
+
+  hr {
+    border: none;
+    border-block-start: var(--border-w) solid var(--line);
+  }
+
+  ::selection {
+    background: var(--accent-pink);
+    color: var(--on-accent);
+  }
+}
+
+@layer components {
+  [data-accent="yellow"] {
+    --accent: var(--accent-yellow);
+  }
+
+  [data-accent="pink"] {
+    --accent: var(--accent-pink);
+  }
+
+  [data-accent="blue"] {
+    --accent: var(--accent-blue);
+  }
+
+  /* Hidden until it has focus, then a solid tab over the header's corner. */
+  .skip-link {
+    position: absolute;
+    inset-block-start: var(--space-3);
+    inset-inline-start: var(--space-3);
+    z-index: 10;
+    padding: var(--space-2) var(--space-4);
+    font-weight: 700;
+    color: var(--on-accent);
+    text-decoration: none;
+    background: var(--accent-yellow);
+    border: var(--border-w) solid var(--on-accent);
+    box-shadow: calc(var(--shadow-x) / 2) calc(var(--shadow-y) / 2) 0 var(--line);
+
+    &:not(:focus) {
+      inline-size: 1px;
+      block-size: 1px;
+      padding: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      border: 0;
+      clip-path: inset(50%);
+    }
+  }
+
+  .site-header {
+    --accent: var(--accent-pink);
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-5);
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: var(--border-w) solid var(--line);
+    box-shadow: calc(var(--shadow-x) * 0.75) calc(var(--shadow-y) * 0.75) 0 var(--accent);
+  }
+
+  .site-brand {
+    font-family: var(--font-display);
+    font-size: var(--size-lg);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    text-decoration-color: transparent;
+
+    &:hover {
+      text-decoration-color: var(--accent);
+    }
+  }
+
+  .site-nav {
+    & ul {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1) var(--space-2);
+      padding: 0;
+      list-style: none;
+    }
+
+    & a {
+      display: block;
+      padding: var(--space-1) var(--space-2);
+      font-size: var(--size-sm);
+      font-weight: 700;
+      text-decoration-color: transparent;
+
+      &:hover {
+        text-decoration-color: var(--accent);
+      }
+
+      /* The page you're on reads as a pressed-in, inverted tab. */
+      &[aria-current="page"] {
+        color: var(--bg);
+        background: var(--ink);
+        text-decoration: none;
+      }
+    }
+  }
+
+  .site-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-6);
+    padding-block-start: var(--space-5);
+    font-size: var(--size-sm);
+    color: var(--ink-muted);
+    border-block-start: var(--border-w) solid var(--line);
+
+    & ul {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1) var(--space-5);
+      padding: 0;
+      list-style: none;
+    }
+
+    & a {
+      display: inline-block;
+      padding-block: var(--space-1);
+      color: var(--ink);
+    }
+  }
+
+  /* A titled part of a page. The heading takes the section's accent. */
+  .section {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: var(--space-5);
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+
+    /* Wide enough that neighboring shadows never touch. */
+    gap: calc(var(--space-5) + var(--shadow-y));
+  }
+
+  /* A row of buttons. In a narrow card the buttons stack full width. */
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
+
+  @container card (inline-size < 24rem) {
+    .actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  /* A dark block with an off-white border and a hard shadow in its accent.
+     It is a size container, so what's inside adapts to the card's own width
+     rather than the viewport's. */
+  .card {
+    container: card / inline-size;
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: var(--space-3);
+    padding: clamp(var(--space-4), 3vw, var(--space-6));
+    background: var(--surface);
+    border: var(--border-w) solid var(--line);
+    box-shadow: var(--shadow-x) var(--shadow-y) 0 var(--accent, var(--line));
+
+    & :is(h2, h3) {
+      font-size: clamp(var(--size-lg), 0.9rem + 4cqi, var(--size-2xl));
+    }
+
+    & > p {
+      max-inline-size: var(--measure);
+    }
+
+    & > .actions {
+      margin-block-start: var(--space-2);
+    }
+
+    /* A linked card is one big button: it presses in like .btn. */
+    &:has(.card__link) {
+      transition:
+        translate var(--motion) ease-out,
+        box-shadow var(--motion) ease-out;
+
+      &:hover {
+        translate: calc(var(--shadow-x) / 2) calc(var(--shadow-y) / 2);
+        box-shadow: calc(var(--shadow-x) / 2) calc(var(--shadow-y) / 2) 0 var(--accent, var(--line));
+      }
+    }
+  }
+
+  /* The card's title link. Its ::after covers the card, so the whole card is
+     the click target while the link text stays the accessible name. */
+  .card__link {
+    text-decoration-color: transparent;
+
+    &::after {
+      position: absolute;
+      inset: calc(var(--border-w) * -1);
+      content: "";
+    }
+
+    &:hover {
+      text-decoration-color: currentcolor;
+    }
+  }
+
+  .card__meta {
+    font-size: var(--size-sm);
+    color: var(--ink-muted);
+  }
+
+  /* Solid fill, dark text and border, off-white shadow. Hover and press move
+     the button toward its shadow by exactly the amount the shadow shrinks. */
+  .btn {
+    --btn-x: calc(var(--shadow-x) / 2);
+    --btn-y: calc(var(--shadow-y) / 2);
+
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    justify-content: center;
+    min-block-size: 2.75rem;
+    padding: var(--space-2) var(--space-4);
+    font-family: var(--font-body);
+    font-size: var(--size-sm);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--on-accent);
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    background: var(--accent-pink);
+    border: var(--border-w) solid var(--on-accent);
+    border-radius: 0;
+    box-shadow: var(--btn-x) var(--btn-y) 0 var(--line);
+    transition:
+      translate var(--motion) ease-out,
+      box-shadow var(--motion) ease-out;
+
+    &:hover {
+      translate: calc(var(--btn-x) / 2) calc(var(--btn-y) / 2);
+      box-shadow: calc(var(--btn-x) / 2) calc(var(--btn-y) / 2) 0 var(--line);
+    }
+
+    &:active {
+      translate: var(--btn-x) var(--btn-y);
+      box-shadow: 0 0 0 var(--line);
+    }
+  }
+
+  .btn--alt {
+    background: var(--ink);
+  }
+
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: 0;
+    list-style: none;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 0 var(--space-2);
+    font-size: var(--size-xs);
+    font-weight: 700;
+    line-height: 1.7;
+    color: var(--ink);
+    border: calc(var(--border-w) - 1px) solid var(--line);
+  }
+
+  /* A chronological list on a rail, one square marker per entry. */
+  .timeline {
+    --marker: 1.25rem;
+
+    display: grid;
+    gap: var(--space-6);
+    padding: 0;
+    margin-inline-start: calc(var(--marker) / 2);
+    list-style: none;
+    border-inline-start: var(--border-w) solid var(--line);
+
+    & > li {
+      position: relative;
+      display: grid;
+      gap: var(--space-1);
+      padding-inline-start: var(--space-6);
+
+      &::before {
+        position: absolute;
+        inset-block-start: 0.2em;
+        inset-inline-start: calc((var(--marker) + var(--border-w)) / -2);
+        inline-size: var(--marker);
+        block-size: var(--marker);
+        content: "";
+        background: var(--accent, var(--accent-yellow));
+        border: var(--border-w) solid var(--on-accent);
+      }
+    }
+
+    & :is(h3, h4) {
+      font-size: var(--size-lg);
+    }
+
+    & time {
+      font-weight: 700;
+    }
+  }
+
+  .timeline__when {
+    font-size: var(--size-sm);
+    color: var(--ink-muted);
+  }
+
+  /* Long-form text. */
+  .prose {
+    max-inline-size: var(--measure);
+
+    & > * + * {
+      margin-block-start: var(--space-4);
+    }
+
+    & > :is(h2, h3, h4) {
+      margin-block-start: var(--space-7);
+    }
+
+    & > :is(h2, h3, h4) + * {
+      margin-block-start: var(--space-3);
+    }
+
+    & :is(ul, ol) {
+      padding-inline-start: var(--space-5);
+    }
+
+    & ul {
+      list-style-type: square;
+    }
+
+    & li + li {
+      margin-block-start: var(--space-2);
+    }
+
+    & li::marker {
+      color: var(--accent, var(--accent-yellow));
+    }
+
+    & blockquote {
+      padding-inline-start: var(--space-4);
+      border-inline-start: var(--border-w) solid var(--accent, var(--line));
+    }
+  }
+
+  /* A terminal UI snapshot in a <pre>. The thick top border is the window bar.
+     Wide snapshots scroll inside the frame, never the page. */
+  .tui-frame {
+    max-inline-size: 100%;
+    padding: var(--space-4) var(--space-5);
+    overflow-x: auto;
+    font-size: var(--size-xs);
+    font-variant-ligatures: none;
+    line-height: 1.35;
+    color: var(--ink);
+    white-space: pre;
+    tab-size: 4;
+    background: var(--sunken);
+    border: var(--border-w) solid var(--line);
+    border-block-start-width: calc(var(--border-w) * 5);
+    box-shadow: var(--shadow-x) var(--shadow-y) 0 var(--accent, var(--accent-blue));
+    scrollbar-color: var(--ink-muted) var(--sunken);
+  }
+}
+
+@layer utilities {
+  .muted {
+    color: var(--ink-muted);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+}
