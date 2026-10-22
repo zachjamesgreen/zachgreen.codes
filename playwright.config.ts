@@ -2,11 +2,12 @@ import { defineConfig, devices } from "@playwright/test";
 
 const ci = Boolean(process.env.CI);
 
-// Several checkouts (git worktrees) can run the e2e suite at once, each on its
-// own port. Each run always starts its own server, so it never tests another
-// checkout's files, or `pnpm dev` (which serves no fixtures).
-// An empty or invalid E2E_PORT falls back to the default instead of becoming port 0.
-const port = Number(process.env.E2E_PORT) || 4321;
+// Each run starts its own server, so it never tests another checkout's files or
+// `pnpm dev` (which serves no fixtures). The default port is one above `pnpm dev`'s
+// 4321, so the suite runs while the dev server is up; E2E_PORT picks another, so
+// several checkouts can run it at once. An empty or invalid E2E_PORT falls back to
+// the default instead of becoming port 0.
+const port = Number(process.env.E2E_PORT) || 4322;
 const origin = `http://127.0.0.1:${port}`;
 
 export default defineConfig({

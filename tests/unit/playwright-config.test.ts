@@ -1,6 +1,7 @@
-// playwright.config.ts picks the dev server's port from E2E_PORT, so several
-// checkouts can run the e2e suite at once. An empty or invalid value, as a CI
-// template or a shell `export E2E_PORT=` leaves, must fall back to the default
+// playwright.config.ts picks the e2e server's port from E2E_PORT, so several
+// checkouts can run the e2e suite at once. The default, 4322, is not `pnpm dev`'s
+// 4321, so the suite runs while the dev server is up. An empty or invalid value, as
+// a CI template or a shell `export E2E_PORT=` leaves, must fall back to the default
 // rather than become port 0.
 
 import assert from "node:assert/strict";
@@ -25,18 +26,18 @@ function loadConfig(port: string | undefined): { baseURL: string; command: strin
 }
 
 describe("playwright.config.ts port", () => {
-  it("is 4321 when E2E_PORT is unset", () => {
-    assert.equal(loadConfig(undefined).baseURL, "http://127.0.0.1:4321");
+  it("is 4322 when E2E_PORT is unset", () => {
+    assert.equal(loadConfig(undefined).baseURL, "http://127.0.0.1:4322");
   });
 
-  it("is 4321 when E2E_PORT is empty, not port 0", () => {
+  it("is 4322 when E2E_PORT is empty, not port 0", () => {
     const { baseURL, command } = loadConfig("");
-    assert.equal(baseURL, "http://127.0.0.1:4321");
-    assert.match(command, /--port 4321\b/);
+    assert.equal(baseURL, "http://127.0.0.1:4322");
+    assert.match(command, /--port 4322\b/);
   });
 
-  it("is 4321 when E2E_PORT is not a number", () => {
-    assert.equal(loadConfig("not-a-port").baseURL, "http://127.0.0.1:4321");
+  it("is 4322 when E2E_PORT is not a number", () => {
+    assert.equal(loadConfig("not-a-port").baseURL, "http://127.0.0.1:4322");
   });
 
   it("uses E2E_PORT when it is a port number", () => {
