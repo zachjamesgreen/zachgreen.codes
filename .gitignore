@@ -6,3 +6,5 @@ playwright-report/
 .superpowers/
 # The content guard's terms (scripts/check-content.ts). Never commit them.
 .forbidden-terms
+# Design docs, kept local.
+docs/superpowers/
