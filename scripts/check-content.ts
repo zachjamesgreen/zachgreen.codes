@@ -30,7 +30,7 @@ const SPACE = String.raw`(?:\s|&nbsp;|&NonBreakingSpace;|&#0*160;|&#x0*a0;)`;
 const WORD = String.raw`[\p{L}\p{M}\p{N}]`;
 
 /** What may sit between the groups of a phone number: a space, `.`, `-`, or a typographic dash or hyphen. */
-const SEPARATOR = String.raw`(?:${SPACE}|[.\-‐-—−])`;
+const SEPARATOR = String.raw`(?:${SPACE}|[.\-\u2010-\u2014\u2212])`;
 
 // A 10-digit NANP number: optional +1, optional parentheses around the area
 // code, and one separator between the groups (or nothing at all). Area code and

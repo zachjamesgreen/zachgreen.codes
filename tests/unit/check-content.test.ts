@@ -86,7 +86,7 @@ describe("findForbidden: word boundaries", () => {
 
 describe("findForbidden: multi-word terms and non-breaking spaces", () => {
   it("matches a multi-word term across any run of whitespace, NBSP included", () => {
-    for (const gap of [" ", "  ", "\n  ", "\t", " ", " ", "   "]) {
+    for (const gap of [" ", "  ", "\n  ", "\t", "\u00a0", "\u202f", " \u00a0 "]) {
       assert.deepEqual(findForbidden(`at Quuxworks${gap}Title Co`, TERMS), [{ term: `Quuxworks${gap}Title`, index: 3 }], JSON.stringify(gap));
     }
   });
@@ -104,7 +104,7 @@ describe("findForbidden: multi-word terms and non-breaking spaces", () => {
   });
 
   it("normalizes the terms too: an NBSP or its reference in a term means any whitespace", () => {
-    for (const term of ["Quuxworks Title", "Quuxworks&nbsp;Title", "Quuxworks&#160;Title", "  Quuxworks   Title  "]) {
+    for (const term of ["Quuxworks\u00a0Title", "Quuxworks&nbsp;Title", "Quuxworks&#160;Title", "  Quuxworks   Title  "]) {
       assert.deepEqual(findForbidden("at Quuxworks Title", [term]), [{ term: "Quuxworks Title", index: 3 }], JSON.stringify(term));
     }
   });
@@ -126,13 +126,13 @@ describe("findForbidden: phone numbers", () => {
   });
 
   it("flags a number spaced with NBSP or an NBSP character reference", () => {
-    for (const shape of ["720 555 0100", "720&nbsp;555&nbsp;0100", "(720)&#160;555-0100", "+1&#xa0;720&#xA0;555&#xa0;0100"]) {
+    for (const shape of ["720\u00a0555\u00a00100", "720&nbsp;555&nbsp;0100", "(720)&#160;555-0100", "+1&#xa0;720&#xA0;555&#xa0;0100"]) {
       assert.deepEqual(findForbidden(`call ${shape} today`, []), [{ term: shape, index: 5 }], shape);
     }
   });
 
   it("flags a number whose separators are en dashes, em dashes or non-breaking hyphens", () => {
-    for (const shape of ["720–555–0100", "720—555—0100", "720‑555‑0100", "1–720–555–0100"]) {
+    for (const shape of ["720\u2013555\u20130100", "720\u2014555\u20140100", "720\u2011555\u20110100", "1\u2013720\u2013555\u20130100"]) {
       assert.deepEqual(findForbidden(shape, []), [{ term: shape, index: 0 }], JSON.stringify(shape));
     }
   });
@@ -221,9 +221,9 @@ describe("check-content CLI", () => {
   });
 
   it("takes newline-separated terms from FORBIDDEN_TERMS", async () => {
-    const res = run(["--stdin"], { cwd: await project(), env: { FORBIDDEN_TERMS: "Zephyrine\nQuuxworks Title\n" }, input: "at Quuxworks Title" });
+    const res = run(["--stdin"], { cwd: await project(), env: { FORBIDDEN_TERMS: "Zephyrine\nQuuxworks Title\n" }, input: "at Quuxworks\u00a0Title" });
     assert.equal(res.status, 1);
-    assert.match(res.stderr, /^stdin:1:4 {2}forbidden: "Quuxworks Title"$/m);
+    assert.match(res.stderr, /^stdin:1:4 {2}forbidden: "Quuxworks\u00a0Title"$/m);
   });
 
   it("takes terms from .forbidden-terms in the working directory", async () => {
