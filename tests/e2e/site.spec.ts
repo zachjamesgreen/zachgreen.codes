@@ -1,6 +1,6 @@
 // The shared page shell and the site-wide rules, checked on every public page
-// in PAGES and on the styled 404 page. A page task adds its page to PAGES and
-// gets every check here.
+// in PAGES and on the styled 404 page. A page in PAGES gets every check here,
+// and tests/unit/pages.test.ts makes sure every page is in PAGES.
 
 import { existsSync } from "node:fs";
 
@@ -20,8 +20,6 @@ const NOT_FOUND = { path: "/nope", name: "404" } as const;
 
 /** Every page that carries the shared header and footer. */
 const ALL: readonly { path: string; name: string }[] = [...PAGES, NOT_FOUND];
-
-const PAGE_PATHS = new Set<string>(PAGES.map(({ path }) => path));
 
 // The fonts are never committed, so CI runs without them (spec §5.4).
 const HAVE_FONTS = ["callingcode-regular-webfont.woff2", "callingcode-bold-webfont.woff2", "0-MonoLisaCode-normal.woff2"].every(
@@ -316,11 +314,7 @@ test.describe("with JavaScript disabled", () => {
 
         await link.click();
         await expect(page).toHaveURL(target.href);
-        if (navigation) {
-          const built = PAGE_PATHS.has(target.pathname);
-          if (!built) test.info().annotations.push({ type: "not built yet", description: `${target.pathname} serves the 404 page` });
-          expect((await navigation).status(), target.pathname).toBe(built ? 200 : 404);
-        }
+        if (navigation) expect((await navigation).status(), target.pathname).toBe(200);
         await expect(page.locator("h1")).toBeVisible();
         if (target.hash) await expect(page.locator(target.hash)).toBeInViewport();
       }

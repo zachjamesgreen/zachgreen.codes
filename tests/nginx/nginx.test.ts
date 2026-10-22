@@ -4,7 +4,7 @@
 // Everything the config references but the repo doesn't own is a stand-in written into a
 // temp dir: Ubuntu's stock nginx.conf, the server's catch-all default_server, certbot's
 // options-ssl-nginx.conf and ssl-dhparams.pem, and a self-signed certificate. The site is
-// a copy of the repo's site/ plus stubs for pages that don't exist yet.
+// a copy of the repo's site/, plus a stub font file and the privacy probes.
 
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
@@ -29,8 +29,9 @@ const CONF = join(REPO, "deploy/nginx");
 const FONT_STUB = "fonts/nginx-test-stub.woff2";
 
 // Ubuntu 26.04's stock /etc/nginx/nginx.conf (package nginx 1.28.3), minus its comments.
-// It sets the include layout, and it already has `gzip on;` in the http block, so a
-// second one in conf.d fails `nginx -t` as a duplicate.
+// It sets the include layout, and its http block already has `gzip on;`. The site's
+// compression settings are a server-level snippet (snippets/zachgreen-compression.conf),
+// so they apply to the apex host only and repeat `gzip on;` without a duplicate.
 const UBUNTU_NGINX_CONF = `user www-data;
 worker_processes auto;
 worker_cpu_affinity auto;
@@ -131,10 +132,6 @@ before(async () => {
 
   // The web root is the repo clone; nginx serves only its site/.
   await cp(join(REPO, "site"), site, { recursive: true });
-  // Pages built in parallel with this test. Written only when missing, so the real
-  // files win once they exist.
-  await putIfMissing(join(site, "settlor/index.html"), STUB_PAGE);
-  await putIfMissing(join(site, "resume/zach-green-resume.pdf"), "%PDF-1.4\n%%EOF\n");
   // The real fonts are gitignored, so CI has none. nginx types a file by its extension,
   // so a stub under its own name is enough to check the font caching rule.
   await put(join(site, FONT_STUB), "wOF2 stub for the nginx test\n");
@@ -189,15 +186,6 @@ test("the site config passes the shared assertions", async () => {
 async function put(path: string, content: string): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, content);
-}
-
-async function putIfMissing(path: string, content: string): Promise<void> {
-  await mkdir(dirname(path), { recursive: true });
-  try {
-    await writeFile(path, content, { flag: "wx" });
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-  }
 }
 
 async function copy(from: string, to: string): Promise<void> {
