@@ -2,6 +2,12 @@ import { defineConfig, devices } from "@playwright/test";
 
 const ci = Boolean(process.env.CI);
 
+// Several checkouts (git worktrees) can run the e2e suite at once, each on its
+// own port. Each run always starts its own server, so it never tests another
+// checkout's files, or `pnpm dev` (which serves no fixtures).
+const port = Number(process.env.E2E_PORT ?? 4321);
+const origin = `http://127.0.0.1:${port}`;
+
 export default defineConfig({
   testDir: "tests/e2e",
   fullyParallel: true,
@@ -10,7 +16,7 @@ export default defineConfig({
   reporter: ci ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
     // scripts/serve.ts listens on the loopback interface only.
-    baseURL: "http://127.0.0.1:4321",
+    baseURL: origin,
     trace: "retain-on-failure",
   },
   projects: [
@@ -19,8 +25,8 @@ export default defineConfig({
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
   ],
   webServer: {
-    command: "node scripts/serve.ts --root site --port 4321 --fixtures tests/e2e/fixtures",
-    url: "http://127.0.0.1:4321/",
-    reuseExistingServer: !ci,
+    command: `node scripts/serve.ts --root site --port ${port} --fixtures tests/e2e/fixtures`,
+    url: `${origin}/`,
+    reuseExistingServer: false,
   },
 });

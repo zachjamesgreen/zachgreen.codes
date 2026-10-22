@@ -4,11 +4,41 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Page not found - Zach Green</title>
+    <meta name="description" content="There is no page at this address on zachgreen.codes.">
+    <meta name="theme-color" content="#17171c">
+    <link rel="stylesheet" href="/css/site.css?v=1">
   </head>
   <body>
-    <main>
-      <h1>Page not found</h1>
-      <p><a href="/">Back to the home page</a></p>
+    <header class="site-header">
+      <a class="skip-link" href="#main">Skip to content</a>
+      <a class="site-brand" href="/">zachgreen.codes</a>
+      <nav class="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="/#work">Work</a></li>
+          <li><a href="/about/">About</a></li>
+          <li><a href="/resume/">Resume</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <section class="card not-found" data-accent="pink" aria-labelledby="not-found-title">
+        <p class="card__meta">Error 404</p>
+        <h1 id="not-found-title">Page not found</h1>
+        <p>There's nothing at this address. The link may be old, or the address may have a typo in it.</p>
+        <div class="actions">
+          <a class="btn" href="/">Back to the home page</a>
+        </div>
+      </section>
     </main>
+
+    <footer class="site-footer">
+      <ul>
+        <li><a href="https://github.com/zachjamesgreen">GitHub</a></li>
+        <li><a href="https://www.linkedin.com/in/zachjamesgreen/">LinkedIn</a></li>
+        <li><a href="mailto:zachjamesgreen&#64;gmail&#46;com">zachjamesgreen&#64;gmail&#46;com</a></li>
+      </ul>
+      <p>Copyright 2026 Zach Green</p>
+    </footer>
   </body>
 </html>
