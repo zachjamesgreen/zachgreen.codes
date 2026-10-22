@@ -1,9 +1,9 @@
 // Facts about the two self-hosted typefaces (spec §5.3) that site.css and the
 // tests rely on.
 //
-// - MONOLISA_RANGES: the MonoLisa subsets the site ships. site.css has one
-//   @font-face per range and style, and nothing else draws text in MonoLisa.
-// - codePointsOutside: the characters of a text that those subsets can't draw,
+// - MONOLISA_RANGES: the code points the MonoLisa files the site ships can
+//   actually draw. site.css loads one normal and one italic file per range.
+// - codePointsOutside: the characters of a text that those files can't draw,
 //   which the browser then takes from the fallback font instead.
 // - fallbackOverrides: the size-adjust and ascent/descent/line-gap overrides
 //   that make a local monospace font take up the same space as the web font,
@@ -36,9 +36,10 @@ export interface Subset {
 }
 
 /**
- * Every subset in MonoLisa's web package, as listed in the vendor's
- * monolisa.css. Each file holds only glyphs inside its range, and there is no
- * Latin-1 or General Punctuation subset: é, — and ’ are not in MonoLisa at all.
+ * Every subset in MonoLisa's web package, with the `unicode-range` the vendor's
+ * monolisa.css gives it. A file holds only glyphs inside its range, but not
+ * necessarily all of them: `2-` (U+2600-26FF) has 17, and no ★. There is no
+ * Latin-1 or General Punctuation subset, so é, — and ’ are not in MonoLisa.
  */
 export const MONOLISA_SUBSETS: readonly Subset[] = [
   { normal: "0-MonoLisaCode-normal.woff2", italic: "1-MonoLisaCode-italic.woff2", range: [0x0020, 0x007f] },
@@ -58,15 +59,19 @@ export const MONOLISA_SUBSETS: readonly Subset[] = [
 ];
 
 /**
- * The ranges the site ships, in ascending order: Basic Latin (`0-`/`1-`), box
- * drawing for the terminal UI snapshot (`20-`/`21-`) and Miscellaneous Symbols
- * (`2-`/`3-`). The last file has only 18 glyphs in it (☐ ☑ ☒ ☺ ♥ and a few
- * more); it does not have ★.
+ * What the shipped MonoLisa files can actually draw, in ascending order: Basic
+ * Latin from `0-`/`1-` and box drawing (for the terminal snapshot) from
+ * `20-`/`21-`.
+ *
+ * These are glyph coverage, not the `unicode-range` descriptors in site.css.
+ * The descriptors are the vendor's, verbatim, and only decide which file the
+ * browser downloads; `0-`'s says U+0020-007F but has no glyph for U+007F.
+ * tests/unit/font-metrics.test.ts reads the shipped files and fails if a code
+ * point listed here has no glyph in them.
  */
 export const MONOLISA_RANGES: readonly Range[] = [
-  [0x0020, 0x007f],
+  [0x0020, 0x007e],
   [0x2500, 0x257f],
-  [0x2600, 0x26ff],
 ];
 
 const covers = (ranges: readonly Range[], cp: number) => ranges.some(([first, last]) => cp >= first && cp <= last);
@@ -82,7 +87,10 @@ export function codePointsOutside(text: string, ranges: readonly Range[]): numbe
   return [...outside].sort((a, b) => a - b);
 }
 
-/** The vendor subset whose range holds `cp`, or undefined when MonoLisa has no file for it. */
+/**
+ * The vendor subset whose `unicode-range` holds `cp`, or undefined when no
+ * MonoLisa file's range does. A range is not a promise of a glyph (see above).
+ */
 export function subsetOf(cp: number): Subset | undefined {
   return MONOLISA_SUBSETS.find(({ range }) => covers([range], cp));
 }
@@ -161,7 +169,7 @@ async function printCoverage(): Promise<void> {
   console.log("Characters outside the shipped MonoLisa ranges (headings are set in Calling Code, so not every hit matters):");
   for (const cp of [...byChar.keys()].sort((a, b) => a - b)) {
     const subset = subsetOf(cp);
-    const where = subset ? `in ${subset.normal} / ${subset.italic}` : "in no MonoLisa file";
+    const where = subset ? `in the range of ${subset.normal} / ${subset.italic}` : "in no MonoLisa file's range";
     console.log(`  ${label(cp)}  ${where}  (${[...byChar.get(cp)!].join(", ")})`);
   }
 }
