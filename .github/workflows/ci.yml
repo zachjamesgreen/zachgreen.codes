@@ -22,7 +22,11 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The content guard's terms are kept out of the repo, in a secret. Without it the
+      # guard has nothing to check for, so it fails, and so does this job.
       - run: pnpm check
+        env:
+          FORBIDDEN_TERMS: ${{ secrets.FORBIDDEN_TERMS }}
 
   # Runs deploy/nginx in Docker (nginx 1.28.3, as on the server) and checks headers,
   # redirects, caching and what stays private. ubuntu-latest ships Docker and openssl.
@@ -42,9 +46,10 @@ jobs:
       - run: pnpm test:nginx
 
   # Playwright smoke, accessibility, layout, meta and resume tests on Chromium, Firefox
-  # and WebKit. The resume check (the PDF exists and its text is current) is part of
-  # this suite. Fonts are absent in CI, so these run against the fallback fonts, which
-  # needs the system monospace font that --with-deps installs.
+  # and WebKit. The resume check (the PDF exists, its text is current and it passes the
+  # content guard, hence the secret) is part of this suite. Fonts are absent in CI, so
+  # these run against the fallback fonts, which needs the system monospace font that
+  # --with-deps installs.
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -60,6 +65,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm test:e2e
+        env:
+          FORBIDDEN_TERMS: ${{ secrets.FORBIDDEN_TERMS }}
       # The report carries the 320, 768 and 1280 px screenshots as attachments, and the
       # traces of failed tests. It is uploaded on failure too, which is when it matters.
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

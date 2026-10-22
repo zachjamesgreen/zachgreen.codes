@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { extractLinks } from "unpdf";
 
-import { findForbidden } from "../../scripts/check-content.ts";
+import { findForbidden, loadForbiddenTerms, NO_TERMS } from "../../scripts/check-content.ts";
 import { htmlWords, pdfFontNames, pdfWords, readPdf } from "../helpers/pdf-text.ts";
 
 const PDF_URL = "/resume/zach-green-resume.pdf";
@@ -138,7 +138,9 @@ test.describe("resume PDF", () => {
     const { pages, text } = await readPdf(PDF_FILE);
     expect(pages).toBeGreaterThanOrEqual(1);
     expect(pages).toBeLessThanOrEqual(2);
-    expect(findForbidden(text)).toEqual([]);
+    const terms = await loadForbiddenTerms();
+    expect(terms.length, NO_TERMS).toBeGreaterThan(0);
+    expect(findForbidden(text, terms)).toEqual([]);
   });
 
   // Spec §5.4: the PDF is set in the site's own fonts, so it must be generated
