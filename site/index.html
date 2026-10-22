@@ -3,12 +3,108 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Zach Green</title>
+    <title>Zach Green - full-stack developer</title>
+    <meta name="description" content="Zach Green is a full-stack developer at Settlor in Denver, Colorado. Python and Vue 3 at work, Go on the side.">
+    <link rel="canonical" href="https://zachgreen.codes/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="zachgreen.codes">
+    <meta property="og:title" content="Zach Green - full-stack developer">
+    <meta property="og:description" content="Zach Green is a full-stack developer at Settlor in Denver, Colorado. Python and Vue 3 at work, Go on the side.">
+    <meta property="og:url" content="https://zachgreen.codes/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="theme-color" content="#17171c">
+    <link rel="stylesheet" href="/css/site.css?v=1">
   </head>
   <body>
-    <main>
-      <h1>Zach Green</h1>
-      <p>Full-stack developer. This site is being rebuilt.</p>
+    <header class="site-header">
+      <a class="skip-link" href="#main">Skip to content</a>
+      <a class="site-brand" href="/" aria-current="page">zachgreen.codes</a>
+      <nav class="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="/#work">Work</a></li>
+          <li><a href="/about/">About</a></li>
+          <li><a href="/resume/">Resume</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <section class="card hero" data-accent="yellow" aria-labelledby="hero-title">
+        <h1 id="hero-title">Zach Green</h1>
+        <p class="hero__lead">Full-stack developer at Settlor, in Denver, Colorado.</p>
+        <p>I want to know <em>why</em> things work, not just that they do. I keep my tools and dependencies current, and I reach for new language and platform features on purpose, when they make the code better.</p>
+        <div class="actions">
+          <a class="btn" href="#work">See my work</a>
+          <a class="btn btn--alt" href="/resume/">Resume</a>
+          <a class="btn btn--alt" href="https://github.com/zachjamesgreen">GitHub</a>
+        </div>
+      </section>
+
+      <section class="section" id="work" data-accent="blue" aria-labelledby="work-title">
+        <h2 id="work-title">Work</h2>
+        <div class="card-grid">
+          <article class="card" data-accent="pink">
+            <h3><a class="card__link" href="/settlor/">Settlor</a></h3>
+            <p class="card__meta">Web Developer since December 2021</p>
+            <p>Nearly five years on the in-house platform a title and escrow company runs on, from Flask and PostgreSQL to Vue 3.</p>
+            <ul class="tag-list">
+              <li class="tag">Python</li>
+              <li class="tag">Flask</li>
+              <li class="tag">Vue 3</li>
+              <li class="tag">PostgreSQL</li>
+            </ul>
+          </article>
+          <article class="card" data-accent="blue">
+            <h3><a class="card__link" href="/tagshelf/">tagshelf</a></h3>
+            <p class="card__meta">Side project in Go, for Windows and Linux</p>
+            <p>Sorts a music library by its tags, sets duplicates aside instead of deleting them, and can undo every run.</p>
+            <ul class="tag-list">
+              <li class="tag">Go</li>
+              <li class="tag">CLI</li>
+              <li class="tag">TUI</li>
+              <li class="tag">MusicBrainz</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <div class="home-split">
+        <section class="section" id="about" data-accent="pink" aria-labelledby="about-title">
+          <h2 id="about-title">About</h2>
+          <div class="prose">
+            <p>Before Settlor I was a hospital corpsman in the Navy, wrote Rails at my first engineering job, and spent years in kitchens before Turing School got me back into code in 2021. Triage taught me to sort what's urgent from what can wait, and running food prep as a sous chef taught me to write the procedure down and train the next person. I still work that way.</p>
+            <p><a href="/about/">The longer version</a></p>
+          </div>
+        </section>
+
+        <section class="section" id="contact" data-accent="yellow" aria-labelledby="contact-title">
+          <h2 id="contact-title">Contact</h2>
+          <p>Say hello by email, or find me on GitHub and LinkedIn.</p>
+          <dl class="contact-list">
+            <div>
+              <dt>Email</dt>
+              <dd><a href="mailto:zachjamesgreen&#64;gmail&#46;com">zachjamesgreen&#64;gmail&#46;com</a></dd>
+            </div>
+            <div>
+              <dt>GitHub</dt>
+              <dd><a href="https://github.com/zachjamesgreen">github.com/zachjamesgreen</a></dd>
+            </div>
+            <div>
+              <dt>LinkedIn</dt>
+              <dd><a href="https://www.linkedin.com/in/zachjamesgreen/">linkedin.com/in/zachjamesgreen</a></dd>
+            </div>
+          </dl>
+        </section>
+      </div>
     </main>
+
+    <footer class="site-footer">
+      <ul>
+        <li><a href="https://github.com/zachjamesgreen">GitHub</a></li>
+        <li><a href="https://www.linkedin.com/in/zachjamesgreen/">LinkedIn</a></li>
+        <li><a href="mailto:zachjamesgreen&#64;gmail&#46;com">zachjamesgreen&#64;gmail&#46;com</a></li>
+      </ul>
+      <p>Copyright 2026 Zach Green</p>
+    </footer>
   </body>
 </html>
