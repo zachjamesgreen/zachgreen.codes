@@ -508,6 +508,14 @@
     gap: calc(var(--space-5) + var(--shadow-y));
   }
 
+  /* Two sections share a row when both fit, and stack when they don't. */
+  .split {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+    gap: var(--space-8) var(--space-7);
+    align-items: start;
+  }
+
   /* A row of buttons. In a narrow card the buttons stack full width. */
   .actions {
     display: flex;
@@ -581,6 +589,14 @@
   .card__meta {
     font-size: var(--size-sm);
     color: var(--ink-muted);
+  }
+
+  /* The first line of an intro card, bigger and bolder than the paragraphs
+     after it. It scales with the card, so a phone doesn't get four lines of bold. */
+  .lead {
+    font-size: clamp(var(--size-md), 0.9rem + 1.5cqi, var(--size-lg));
+    font-weight: 700;
+    line-height: 1.4;
   }
 
   /* Solid fill, dark text and border, off-white shadow. Hover and press move
@@ -703,15 +719,17 @@
       margin-block-start: var(--space-3);
     }
 
-    & :is(ul, ol) {
+    /* A .tag-list inside prose is not a prose list: it keeps its own gap, no
+       padding and no markers. :where() keeps these rules' specificity as it was. */
+    & :is(ul, ol):where(:not(.tag-list)) {
       padding-inline-start: var(--space-5);
     }
 
-    & ul {
+    & ul:where(:not(.tag-list)) {
       list-style-type: square;
     }
 
-    & li + li {
+    & :is(ul, ol):where(:not(.tag-list)) > li + li {
       margin-block-start: var(--space-2);
     }
 
@@ -757,21 +775,6 @@
     & > .actions {
       margin-block-start: var(--space-3);
     }
-  }
-
-  /* Scales with the card, so a phone doesn't get four lines of bold. */
-  .hero__lead {
-    font-size: clamp(var(--size-md), 0.9rem + 1.5cqi, var(--size-lg));
-    font-weight: 700;
-    line-height: 1.4;
-  }
-
-  /* About and contact share a row when both fit. */
-  .home-split {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
-    gap: var(--space-8) var(--space-7);
-    align-items: start;
   }
 
   /* Label and link side by side, or stacked when the link doesn't fit. */
@@ -830,11 +833,6 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
     }
-
-    /* A tag list with a note under it. */
-    & dd:not(.prose) > * + * {
-      margin-block-start: var(--space-3);
-    }
   }
 
   @container card (inline-size >= 40rem) {
@@ -845,37 +843,12 @@
     }
   }
 
-  /* page: tagshelf */
-
-  /* The intro's first line: bigger than body text, and it scales with the card. */
-  .tagshelf-lead {
-    font-size: clamp(var(--size-md), 0.9rem + 1.5cqi, var(--size-lg));
-    font-weight: 700;
-    line-height: 1.4;
-  }
-
-  /* What it does and how it's built share a row when both fit. */
-  .tagshelf-split {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
-    gap: var(--space-8) var(--space-7);
-    align-items: start;
-  }
-
   /* page: about */
 
   /* More room than a plain card, since this one carries the page's story. */
   .about-intro {
     gap: var(--space-4);
     padding-block: clamp(var(--space-5), 5vw, var(--space-7));
-  }
-
-  /* The one-line version, set louder than the paragraphs after it. It scales
-     with the card, so a phone doesn't get five lines of bold. */
-  .about-intro__lead {
-    font-size: clamp(var(--size-md), 0.9rem + 1.5cqi, var(--size-lg));
-    font-weight: 700;
-    line-height: 1.4;
   }
 
   /* An entry's text keeps a readable line length when the page is wide. */
@@ -896,12 +869,6 @@
     }
   }
 
-  .resume-intro__lead {
-    font-size: clamp(var(--size-md), 0.9rem + 1.5cqi, var(--size-lg));
-    font-weight: 700;
-    line-height: 1.4;
-  }
-
   /* Each link shows its own address, so it still reads on paper. On a phone
      the longest one is wider than the card, so it may break anywhere. */
   .resume-contact {
@@ -918,14 +885,6 @@
       font-weight: 700;
       overflow-wrap: anywhere;
     }
-  }
-
-  /* The project beside skills and education, when both fit. */
-  .resume-split {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
-    gap: var(--space-8) var(--space-7);
-    align-items: start;
   }
 
   .resume-side {

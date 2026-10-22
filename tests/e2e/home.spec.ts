@@ -54,6 +54,19 @@ test.describe("home", () => {
     expect(accents[0]).not.toBe(accents[1]);
   });
 
+  // Only identical copies are set aside on their own; other duplicates go to a person in the TUI.
+  test("the tagshelf card says identical copies, not duplicates, are set aside, and so do no descriptions", async ({ page }) => {
+    const summary = page
+      .locator("#work .card")
+      .filter({ has: page.locator('a.card__link[href="/tagshelf/"]') })
+      .locator("p:not(.card__meta)");
+    await expect(summary).toContainText("identical copies");
+    await expect(summary).not.toContainText("duplicates aside");
+    for (const meta of ['meta[name="description"]', 'meta[property="og:description"]']) {
+      await expect(page.locator(meta), meta).not.toHaveAttribute("content", /duplicates aside/);
+    }
+  });
+
   test("clicking anywhere on a work card opens its page", async ({ page }) => {
     for (const target of ["/settlor/", "/tagshelf/"]) {
       await page.goto("/");

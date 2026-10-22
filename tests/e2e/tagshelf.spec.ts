@@ -65,8 +65,8 @@ test.describe("tagshelf", () => {
 
   // Only identical copies are set aside on their own; other duplicates go to a person in the TUI.
   test("says identical copies, not duplicates, are set aside, in the lead and in both descriptions", async ({ page }) => {
-    await expect(page.locator(".tagshelf-lead")).toContainText("identical copies");
-    await expect(page.locator(".tagshelf-lead")).not.toContainText("duplicates aside");
+    await expect(page.locator(".lead")).toContainText("identical copies");
+    await expect(page.locator(".lead")).not.toContainText("duplicates aside");
     for (const meta of ['meta[name="description"]', 'meta[property="og:description"]']) {
       await expect(page.locator(meta), meta).toHaveAttribute("content", /sets identical copies aside/);
       await expect(page.locator(meta), meta).not.toHaveAttribute("content", /duplicates aside/);

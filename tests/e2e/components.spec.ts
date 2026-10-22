@@ -217,6 +217,82 @@ test("each card takes its shadow and heading color from data-accent", async ({ p
   }
 });
 
+// `.lead`: the large bold first line of an intro card. It is one component, so
+// the home, tagshelf, about and resume intros all render it the same way.
+test(".lead is a bold intro line that scales with its card", async ({ page }) => {
+  const lead = page.locator(".card > .lead");
+  const sizeAt = async (width: number) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(FIXTURE);
+    await expect(lead).toHaveCount(1);
+    return computed(lead, "font-size", "font-weight", "line-height");
+  };
+
+  const wide = await sizeAt(1280);
+  const body = await computed(lead.locator("xpath=following-sibling::p[1]"), "font-size", "font-weight");
+  expect(wide["font-weight"]).toBe("700");
+  expect(body["font-weight"]).toBe("400");
+  expect(parseFloat(wide["font-size"])).toBeGreaterThan(parseFloat(body["font-size"]));
+  expect(parseFloat(wide["line-height"]) / parseFloat(wide["font-size"])).toBeCloseTo(1.4);
+
+  // Narrower card, smaller line, but never below body size.
+  const narrow = await sizeAt(320);
+  expect(parseFloat(narrow["font-size"])).toBeGreaterThanOrEqual(parseFloat(body["font-size"]));
+  expect(parseFloat(narrow["font-size"])).toBeLessThan(parseFloat(wide["font-size"]));
+});
+
+// `.split`: two sections side by side when both fit, stacked when they don't.
+for (const [width, columns] of [
+  [1280, 2],
+  [320, 1],
+] as const) {
+  test(`.split lays out as ${columns === 1 ? "one column" : `${columns} columns`} at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(FIXTURE);
+    const split = page.locator(".split");
+    await expect(split).toHaveCount(1);
+    const children = split.locator("> *");
+    await expect(children).toHaveCount(2);
+
+    const { display, "grid-template-columns": tracks } = await computed(split, "display", "grid-template-columns");
+    expect(display).toBe("grid");
+    expect(tracks.split(/\s+/), `grid-template-columns: ${tracks}`).toHaveLength(columns);
+
+    const [first, second] = [(await children.nth(0).boundingBox())!, (await children.nth(1).boundingBox())!];
+    if (columns === 2) {
+      expect(second.x).toBeGreaterThan(first.x + first.width - 1);
+      expect(second.y).toBeCloseTo(first.y, 0);
+    } else {
+      expect(second.x).toBeCloseTo(first.x, 0);
+      expect(second.y).toBeGreaterThanOrEqual(first.y + first.height);
+    }
+  });
+}
+
+// `.prose ul` has more specificity than `.tag-list`, so tags inside prose used
+// to pick up the list's padding, its square markers and a gap above every tag.
+test("a .tag-list inside .prose keeps the tag-list gap and has no list padding", async ({ page }) => {
+  await page.goto(FIXTURE);
+  const inProse = page.locator(".prose .tag-list");
+  const outside = page.locator(".card .tag-list").first();
+  await expect(inProse).toHaveCount(1);
+
+  const props = ["padding-inline-start", "list-style-type", "row-gap", "column-gap"] as const;
+  const [inside, alone] = [await computed(inProse, ...props), await computed(outside, ...props)];
+  expect(inside["padding-inline-start"]).toBe("0px");
+  expect(inside["list-style-type"]).toBe("none");
+  expect(inside["row-gap"]).toBe("8px");
+  expect(inside["column-gap"]).toBe("8px");
+  expect(inside).toEqual(alone);
+
+  // The prose rhythm between list items must not push one tag below its neighbors.
+  const tags = inProse.locator(".tag");
+  expect(await tags.count()).toBeGreaterThanOrEqual(3);
+  for (const tag of await tags.all()) expect((await computed(tag, "margin-top"))["margin-top"]).toBe("0px");
+  const tops = await tags.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().top));
+  expect(new Set(tops).size, "all the tags share a row at 1280px").toBe(1);
+});
+
 test("nothing overflows the page at 320px, and the terminal frame scrolls inside itself", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto(FIXTURE);
