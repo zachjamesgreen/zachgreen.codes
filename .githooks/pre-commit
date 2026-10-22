@@ -1,0 +1,6 @@
+#!/bin/sh
+# Blocks committing the commercial font files (spec §5.4). Enabled by `pnpm install`,
+# whose `prepare` script sets core.hooksPath to this directory.
+set -eu
+
+exec node scripts/check-no-fonts.ts --staged
