@@ -1,7 +1,7 @@
 // Structure rules for site/css/site.css. Shared components belong in the
-// `components` layer; the `pages` layer holds only what one page needs. Several
-// pages were once built side by side without touching shared CSS, which left a
-// copy of the same rule on each page, so this keeps them from coming back.
+// `components` layer; the `pages` layer holds only what one page needs. A rule
+// copied into each page's styles drifts apart over time, so these keep the shared
+// .lead and .split from being redefined per page.
 
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -59,8 +59,8 @@ describe("site.css layers", () => {
   });
 
   it("has no page-local *-lead or *-split selector in the pages layer", () => {
-    // A page's own intro line or two-column row is the shared .lead or .split.
-    // A page-specific override of one would have to be justified here.
+    // A page's own intro line or two-column row is the shared .lead or .split,
+    // never a page-local copy such as .about-lead.
     assert.deepEqual(
       [...new Set(pages.filter((name) => /[-_](lead|split)$/.test(name)))],
       [],
