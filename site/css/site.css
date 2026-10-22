@@ -847,6 +847,21 @@
 
   /* page: tagshelf */
 
+  /* The intro's first line: bigger than body text, and it scales with the card. */
+  .tagshelf-lead {
+    font-size: clamp(var(--size-md), 0.9rem + 1.5cqi, var(--size-lg));
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  /* What it does and how it's built share a row when both fit. */
+  .tagshelf-split {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+    gap: var(--space-8) var(--space-7);
+    align-items: start;
+  }
+
   /* page: about */
 
   /* page: resume */

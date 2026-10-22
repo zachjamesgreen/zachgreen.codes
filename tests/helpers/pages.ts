@@ -5,7 +5,7 @@ export const PAGES = [
 
   { path: "/settlor/", name: "settlor" },
 
-  // tagshelf
+  { path: "/tagshelf/", name: "tagshelf" },
 
   // about
 
