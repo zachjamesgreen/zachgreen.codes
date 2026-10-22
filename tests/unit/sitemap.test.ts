@@ -1,4 +1,4 @@
-// The files that aren't pages (spec §8): sitemap.xml lists exactly the public
+// The files that aren't pages: sitemap.xml lists exactly the public
 // pages in tests/helpers/pages.ts, robots.txt points at the sitemap, and the
 // social preview image and icons have the sizes the platforms expect.
 

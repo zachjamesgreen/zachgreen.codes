@@ -105,7 +105,6 @@ test("hover and press move .btn toward its shadow by exactly as much as the shad
   await page.mouse.up();
 });
 
-// Review Focus 5.
 test("with reduced motion nothing animates; without it, .btn's press is animated", async ({ page }) => {
   await page.goto(FIXTURE);
   const button = page.locator(".btn").first();
@@ -321,7 +320,7 @@ test("screenshots at 1280 and 320px, kept as artifacts", async ({ page }, testIn
   }
 });
 
-// The fallback faces are sized to the web fonts (spec §5.3), so swapping the
+// The fallback faces are sized to the web fonts, so swapping the
 // real fonts in should not move anything. Needs the fonts, so CI skips it.
 test("the fallback faces take up the same space as the web fonts", async ({ browser }) => {
   test.skip(!HAVE_FONTS, "needs the web fonts in site/fonts/");

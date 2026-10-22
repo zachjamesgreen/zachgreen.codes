@@ -1,6 +1,7 @@
 // Static server for development and tests that behaves like the production
-// nginx (spec §8): `index index.html`, `try_files $uri $uri/ =404`, a 301 for a
-// directory requested without its trailing slash, and `error_page 404 /404.html`.
+// nginx (deploy/nginx/zachgreen.codes.conf): `index index.html`, `try_files $uri
+// $uri/ =404`, a 301 for a directory requested without its trailing slash, and
+// `error_page 404 /404.html`.
 // Dotfiles are never served. It listens on the loopback interface only.
 //
 //   node scripts/serve.ts --root site [--port 4321] [--fixtures tests/e2e/fixtures]

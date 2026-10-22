@@ -1,4 +1,4 @@
-// The two typefaces are commercial and the repo is public (spec §5.4), so no
+// The two typefaces are commercial and the repo is public, so no
 // font file may ever be tracked. Used by CI and by the pre-commit hook.
 //
 //   node scripts/check-no-fonts.ts            checks every tracked file
@@ -29,7 +29,7 @@ if (import.meta.main) {
     : gitPaths("ls-files");
   const fonts = findTrackedFonts(paths);
   if (fonts.length > 0) {
-    console.error(`Font files must never be committed (spec §5.4):\n${fonts.map((path) => `  ${path}`).join("\n")}`);
+    console.error(`Font files must never be committed (the typefaces are commercial):\n${fonts.map((path) => `  ${path}`).join("\n")}`);
     process.exit(1);
   }
 }

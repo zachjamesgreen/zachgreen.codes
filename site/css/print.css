@@ -1,5 +1,5 @@
 /*
- * The resume on paper (spec §6.5): US Letter, dark ink on white, in the same
+ * The resume on paper: US Letter, dark ink on white, in the same
  * two fonts as the site. Only /resume/ links this file, with media="print",
  * and scripts/resume-pdf.ts prints the PDF with it. Run `pnpm resume:pdf`
  * after changing it.

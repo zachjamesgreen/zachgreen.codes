@@ -1,4 +1,4 @@
-// The About page (spec §6.4): the backstory as an intro and a timeline. The
+// The About page: the backstory as an intro and a timeline. The
 // shell and the site-wide rules are in site.spec.ts.
 
 import { expect, test } from "@playwright/test";

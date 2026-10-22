@@ -1,4 +1,4 @@
-// Facts about the two self-hosted typefaces (spec §5.3) that site.css and the
+// Facts about the two self-hosted typefaces that site.css and the
 // tests rely on.
 //
 // - MONOLISA_RANGES: the code points the MonoLisa files the site ships can

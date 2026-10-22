@@ -34,7 +34,8 @@ export interface AssertionOptions {
   fontPath?: string;
 }
 
-// Spec §8, verbatim.
+// The policy the site is built for, written out here rather than read from the nginx
+// config, so a change to either one fails until the other matches.
 const CSP = [
   "default-src 'self'",
   "script-src 'self' https://stats.zachgreen.codes",

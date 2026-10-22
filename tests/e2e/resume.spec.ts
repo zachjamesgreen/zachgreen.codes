@@ -1,4 +1,4 @@
-// The resume page (spec §6.5) and the PDF generated from it. The shell and the
+// The resume page and the PDF generated from it. The shell and the
 // site-wide rules are in site.spec.ts.
 //
 // The PDF is committed, and CI has no fonts, so the PDF checks compare words,
@@ -18,7 +18,7 @@ const PDF_URL = "/resume/zach-green-resume.pdf";
 const PDF_FILE = fileURLToPath(new URL(`../../site${PDF_URL}`, import.meta.url));
 const REGENERATE = "out of date: run pnpm resume:pdf";
 
-/** Every job in spec §6.4, newest first. Turing is under education. */
+/** Every job, newest first. Turing is under education. */
 const EXPERIENCE = [
   { start: "2021-12-06", title: "Web Developer", org: "Settlor" },
   { start: "2021-09", title: "Back End Software Engineer", org: "Fairwinds Ops" },
@@ -38,7 +38,7 @@ test.describe("resume page", () => {
     for (const text of ["Web Developer", "Settlor", "tagshelf", "Turing", "Denver"]) await expect(main).toContainText(text);
   });
 
-  test("lists every job in spec §6.4, newest first by <time datetime>", async ({ page }) => {
+  test("lists every job, newest first by <time datetime>", async ({ page }) => {
     const entries = page.locator("#experience .timeline > li");
     const starts = await entries.evaluateAll((items) => items.map((item) => item.querySelector("time")?.getAttribute("datetime") ?? ""));
     const times = starts.map((start) => Date.parse(start));
@@ -143,8 +143,8 @@ test.describe("resume PDF", () => {
     expect(findForbidden(text, terms)).toEqual([]);
   });
 
-  // Spec §5.4: the PDF is set in the site's own fonts, so it must be generated
-  // where site/fonts/ exists. The web fonts carry no usable names, so the check
+  // The PDF is set in the site's own fonts, so it must be generated where
+  // site/fonts/ exists. The web fonts carry no usable names, so the check
   // is that no embedded font is one of the local faces site.css falls back to
   // (Menlo, DejaVu Sans Mono, Liberation Mono, Courier New).
   test("is set in the web fonts, not in a fallback font", async () => {

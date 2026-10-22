@@ -1,10 +1,10 @@
-// The Settlor page (spec §6.2). The shell and the site-wide rules are in
+// The Settlor page. The shell and the site-wide rules are in
 // site.spec.ts, and scripts/check-content.ts keeps Settlor's internal names off
 // every page.
 
 import { expect, test, type Page } from "@playwright/test";
 
-/** The five workstreams, in the order spec §6.2 ranks them. */
+/** The five workstreams, strongest first. */
 const WORKSTREAMS = [
   { name: "platform modernization", heading: /platform.*modernization/i },
   { name: "remote print service", heading: /remote print service/i },
@@ -31,7 +31,7 @@ test.describe("settlor", () => {
     await expect(main).toContainText(/\bDec(ember)? 2021\b/);
   });
 
-  test("the h2s cover the five workstreams, in the spec's order", async ({ page }) => {
+  test("the h2s cover the five workstreams, strongest first", async ({ page }) => {
     const headings = await page.locator("main h2").allTextContents();
     const positions = WORKSTREAMS.map(({ heading }) => headings.findIndex((text) => heading.test(text)));
     expect(positions, `h2s: ${headings.join(" | ")}`).not.toContain(-1);
@@ -59,7 +59,8 @@ test.describe("settlor", () => {
     });
   }
 
-  // §6.2 says what the service does, not why it has to run on site.
+  // What the service does is known; why it has to run on site isn't, so the page
+  // mustn't claim a reason.
   test("the print service section doesn't claim a cloud app can't reach office printers", async ({ page }) => {
     const section = workstream(page, /remote print service/i);
     await expect(section).toHaveCount(1);
