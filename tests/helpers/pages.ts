@@ -7,7 +7,7 @@ export const PAGES = [
 
   { path: "/tagshelf/", name: "tagshelf" },
 
-  // about
+  { path: "/about/", name: "about" },
 
   // resume
 ] as const;
