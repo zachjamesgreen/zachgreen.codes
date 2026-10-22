@@ -8,3 +8,5 @@ playwright-report/
 .forbidden-terms
 # Design docs, kept local.
 docs/superpowers/
+# Where pnpm deploy sends the site (scripts/deploy.sh): server details, kept local.
+.deploy.env

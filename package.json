@@ -15,9 +15,11 @@
     "test:unit": "node --test \"tests/unit/**/*.test.ts\"",
     "test:e2e": "playwright test",
     "test:nginx": "node --test tests/nginx/nginx.test.ts",
+    "test:live": "node --test tests/live/live.test.ts",
     "test:links": "node scripts/check-links.ts",
     "test:lighthouse": "lhci autorun",
-    "check": "pnpm lint && pnpm test:unit"
+    "check": "pnpm lint && pnpm test:unit",
+    "deploy": "bash scripts/deploy.sh"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
