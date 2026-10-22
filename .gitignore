@@ -4,3 +4,5 @@ test-results/
 playwright-report/
 .lighthouseci/
 .superpowers/
+# The content guard's terms (scripts/check-content.ts). Never commit them.
+.forbidden-terms
