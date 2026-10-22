@@ -808,6 +808,43 @@
 
   /* page: settlor */
 
+  /* Labels and what they label: the intro's stack, and each workstream's
+     problem, work, stack and scale. A label sits above its content until the
+     card is wide enough, then beside it in a fixed column, so the content
+     lines up from one card to the next. A longer label wraps. */
+  .settlor-facts {
+    display: grid;
+    gap: var(--space-5);
+    margin-block-start: var(--space-2);
+
+    & > div {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-2);
+    }
+
+    & dt {
+      font-size: var(--size-xs);
+      font-weight: 700;
+      color: var(--ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* A tag list with a note under it. */
+    & dd:not(.prose) > * + * {
+      margin-block-start: var(--space-3);
+    }
+  }
+
+  @container card (inline-size >= 40rem) {
+    .settlor-facts > div {
+      grid-template-columns: 12ch minmax(0, 1fr);
+      gap: var(--space-6);
+      align-items: baseline;
+    }
+  }
+
   /* page: tagshelf */
 
   /* page: about */
