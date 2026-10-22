@@ -6,10 +6,14 @@ import { dirname, join } from "node:path";
 import { after, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { findForbidden, loadForbiddenTerms, termsFromEnv, termsFromFile } from "../../scripts/check-content.ts";
+import { findForbidden, hitSummary, loadForbiddenTerms, termsFromEnv, termsFromFile } from "../../scripts/check-content.ts";
 
 // Made-up terms. The real list never goes in the repo: the guard is given it at run time.
 const TERMS = ["Zephyrine", "Quuxworks Title"] as const;
+
+/** What findForbidden reports for a term and for a phone number: the text as found, where, and which kind of hit. */
+const termHit = (term: string, index: number) => ({ kind: "term", term, index });
+const phoneHit = (term: string, index: number) => ({ kind: "phone", term, index });
 
 const dirs: string[] = [];
 after(() => Promise.all(dirs.map((dir) => rm(dir, { recursive: true, force: true }))));
@@ -29,15 +33,15 @@ describe("findForbidden: terms", () => {
   for (const term of TERMS) {
     it(`flags ${term} in any letter case, reporting the text found and where`, () => {
       for (const variant of [term, term.toUpperCase(), term.toLowerCase()]) {
-        assert.deepEqual(findForbidden(`built ${variant} in 2021`, TERMS), [{ term: variant, index: 6 }]);
+        assert.deepEqual(findForbidden(`built ${variant} in 2021`, TERMS), [termHit(variant, 6)]);
       }
     });
   }
 
   it("reports every hit, in order", () => {
     assert.deepEqual(findForbidden("Zephyrine, then Quuxworks Title", TERMS), [
-      { term: "Zephyrine", index: 0 },
-      { term: "Quuxworks Title", index: 16 },
+      termHit("Zephyrine", 0),
+      termHit("Quuxworks Title", 16),
     ]);
   });
 
@@ -57,7 +61,38 @@ describe("findForbidden: terms", () => {
 
   it("escapes a term, so its punctuation matches only itself", () => {
     assert.deepEqual(findForbidden("Zeph-yrine Zephxyrine", ["Zeph.yrine"]), []);
-    assert.deepEqual(findForbidden("Zeph.yrine", ["Zeph.yrine"]), [{ term: "Zeph.yrine", index: 0 }]);
+    assert.deepEqual(findForbidden("Zeph.yrine", ["Zeph.yrine"]), [termHit("Zeph.yrine", 0)]);
+  });
+});
+
+describe("findForbidden: dash entities in a term", () => {
+  it("a hyphen in a term also matches a dash entity, as it would a hyphen", () => {
+    for (const text of ["Zeph-yrine", "Zeph&ndash;yrine", "Zeph&#8209;yrine", "Zeph&#x2212;yrine", "ZEPH&MDASH;YRINE"]) {
+      assert.deepEqual(findForbidden(`at ${text}.`, ["Zeph-yrine"]), [termHit(text, 3)], text);
+    }
+  });
+
+  it("still does not match a term with something else where its hyphen is", () => {
+    for (const text of ["Zeph yrine", "Zephyrine", "Zeph&nbsp;yrine", "Zeph&amp;yrine", "Zeph.yrine"]) {
+      assert.deepEqual(findForbidden(text, ["Zeph-yrine"]), [], text);
+    }
+  });
+});
+
+describe("hitSummary", () => {
+  it("gives the count and the character offsets, and nothing of the text found", () => {
+    const text = "built Zephyrine, then call (720) 555-0100 at Quuxworks Title";
+    const summary = hitSummary(findForbidden(text, TERMS));
+    assert.equal(summary, "3 forbidden terms or phone numbers, at character offsets 6, 27, 45");
+    assert.doesNotMatch(summary, /zephyrine|quuxworks|555/i);
+  });
+
+  it("says it in the singular for one hit", () => {
+    assert.equal(hitSummary(findForbidden("built Zephyrine", TERMS)), "1 forbidden term or phone number, at character offset 6");
+  });
+
+  it("says so when there is none", () => {
+    assert.equal(hitSummary([]), "no forbidden terms or phone numbers");
   });
 });
 
@@ -79,7 +114,7 @@ describe("findForbidden: word boundaries", () => {
       ["&ldquo;Zephyrine&rdquo;", 7],
     ];
     for (const [text, index] of cases) {
-      assert.deepEqual(findForbidden(text, TERMS), [{ term: "Zephyrine", index }], text);
+      assert.deepEqual(findForbidden(text, TERMS), [termHit("Zephyrine", index)], text);
     }
   });
 });
@@ -87,13 +122,13 @@ describe("findForbidden: word boundaries", () => {
 describe("findForbidden: multi-word terms and non-breaking spaces", () => {
   it("matches a multi-word term across any run of whitespace, NBSP included", () => {
     for (const gap of [" ", "  ", "\n  ", "\t", "\u00a0", "\u202f", " \u00a0 "]) {
-      assert.deepEqual(findForbidden(`at Quuxworks${gap}Title Co`, TERMS), [{ term: `Quuxworks${gap}Title`, index: 3 }], JSON.stringify(gap));
+      assert.deepEqual(findForbidden(`at Quuxworks${gap}Title Co`, TERMS), [termHit(`Quuxworks${gap}Title`, 3)], JSON.stringify(gap));
     }
   });
 
   it("matches across an NBSP character reference", () => {
     for (const gap of ["&nbsp;", "&#160;", "&#xa0;", "&#xA0;", " &nbsp; "]) {
-      assert.deepEqual(findForbidden(`at Quuxworks${gap}Title Co`, TERMS), [{ term: `Quuxworks${gap}Title`, index: 3 }], gap);
+      assert.deepEqual(findForbidden(`at Quuxworks${gap}Title Co`, TERMS), [termHit(`Quuxworks${gap}Title`, 3)], gap);
     }
   });
 
@@ -105,7 +140,7 @@ describe("findForbidden: multi-word terms and non-breaking spaces", () => {
 
   it("normalizes the terms too: an NBSP or its reference in a term means any whitespace", () => {
     for (const term of ["Quuxworks\u00a0Title", "Quuxworks&nbsp;Title", "Quuxworks&#160;Title", "  Quuxworks   Title  "]) {
-      assert.deepEqual(findForbidden("at Quuxworks Title", [term]), [{ term: "Quuxworks Title", index: 3 }], JSON.stringify(term));
+      assert.deepEqual(findForbidden("at Quuxworks Title", [term]), [termHit("Quuxworks Title", 3)], JSON.stringify(term));
     }
   });
 });
@@ -115,36 +150,65 @@ describe("findForbidden: phone numbers", () => {
 
   for (const shape of shapes) {
     it(`flags ${shape}`, () => {
-      assert.deepEqual(findForbidden(`call ${shape} today`, []), [{ term: shape, index: 5 }]);
+      assert.deepEqual(findForbidden(`call ${shape} today`, []), [phoneHit(shape, 5)]);
     });
   }
 
   it("also flags the dashed, compact and 1-prefixed forms", () => {
     for (const shape of ["720-555-0100", "7205550100", "1-720-555-0100", "(720)555-0100", "+17205550100"]) {
-      assert.deepEqual(findForbidden(shape, []), [{ term: shape, index: 0 }], shape);
+      assert.deepEqual(findForbidden(shape, []), [phoneHit(shape, 0)], shape);
     }
   });
 
   it("flags a number spaced with NBSP or an NBSP character reference", () => {
     for (const shape of ["720\u00a0555\u00a00100", "720&nbsp;555&nbsp;0100", "(720)&#160;555-0100", "+1&#xa0;720&#xA0;555&#xa0;0100"]) {
-      assert.deepEqual(findForbidden(`call ${shape} today`, []), [{ term: shape, index: 5 }], shape);
+      assert.deepEqual(findForbidden(`call ${shape} today`, []), [phoneHit(shape, 5)], shape);
     }
   });
 
   it("flags a number whose separators are en dashes, em dashes or non-breaking hyphens", () => {
     for (const shape of ["720\u2013555\u20130100", "720\u2014555\u20140100", "720\u2011555\u20110100", "1\u2013720\u2013555\u20130100"]) {
-      assert.deepEqual(findForbidden(shape, []), [{ term: shape, index: 0 }], JSON.stringify(shape));
+      assert.deepEqual(findForbidden(shape, []), [phoneHit(shape, 0)], JSON.stringify(shape));
     }
   });
 
+  it("flags a number whose separators are dash entities, named, decimal or hex", () => {
+    const shapes = [
+      "720&ndash;555&ndash;0100",
+      "720&mdash;555&mdash;0100",
+      "720&minus;555&minus;0100",
+      "720&#8211;555&#8211;0100",
+      "720&#8208;555&#8212;0100",
+      "720&#8722;555&#8722;0100",
+      "720&#x2011;555&#x2011;0100",
+      "720&#x2010;555&#x2014;0100",
+      "720&#x2212;555&#x2212;0100",
+      "720&#X2013;555&#x2013;0100",
+      "720&#x02011;555&#x0002013;0100",
+      "720&#00008211;555&#0008211;0100",
+      "1&ndash;720&ndash;555&ndash;0100",
+      "(720)&ndash;555&ndash;0100",
+      "+1&#x2011;720&#x2011;555&#x2011;0100",
+      "720&ndash;555-0100",
+    ];
+    for (const shape of shapes) {
+      assert.deepEqual(findForbidden(`call ${shape} today`, []), [phoneHit(shape, 5)], shape);
+    }
+  });
+
+  it("reports a dash-entity number where it is in the source, not where a normalized copy would have it", () => {
+    const text = "&ndash;&ndash; 720&ndash;555&ndash;0100 &ndash; 720&mdash;555&mdash;0100";
+    assert.deepEqual(findForbidden(text, []), [phoneHit("720&ndash;555&ndash;0100", 15), phoneHit("720&mdash;555&mdash;0100", 48)]);
+  });
+
   it("does not take a trailing full stop as part of the number", () => {
-    assert.deepEqual(findForbidden("Call 720.555.0100.", []), [{ term: "720.555.0100", index: 5 }]);
+    assert.deepEqual(findForbidden("Call 720.555.0100.", []), [phoneHit("720.555.0100", 5)]);
   });
 
   it("checks phone numbers alongside the terms", () => {
     assert.deepEqual(findForbidden("Zephyrine: 720-555-0100", TERMS), [
-      { term: "Zephyrine", index: 0 },
-      { term: "720-555-0100", index: 11 },
+      termHit("Zephyrine", 0),
+      phoneHit("720-555-0100", 11),
     ]);
   });
 
@@ -152,6 +216,12 @@ describe("findForbidden: phone numbers", () => {
     "14.369",
     "2021–2026",
     "2021&nbsp;–&nbsp;2026",
+    "2021&ndash;2026",
+    "2021&#8211;2026",
+    "2021&#x2013;2026",
+    "720&ndash;555",
+    "720&#8209;555&#8209;010",
+    "&#8211;720555010&#8211;",
     "1200×630",
     "about 650 commits",
     "SHA256:ubdsm…",
@@ -214,28 +284,50 @@ describe("check-content CLI", () => {
     return spawnSync(process.execPath, [script, ...args], { encoding: "utf8", cwd: options.cwd, env: options.env ?? {}, input: options.input });
   }
 
-  it("--stdin exits 1 and names the line and column of a forbidden term", async () => {
+  /** The guard's output goes to a public CI log: no part of what it matched may be in it. */
+  function assertNoEcho(res: { stdout: string; stderr: string }, ...found: string[]) {
+    for (const text of found) {
+      assert.ok(!res.stdout.toLowerCase().includes(text.toLowerCase()), `stdout echoes ${text.length} matched characters`);
+      assert.ok(!res.stderr.toLowerCase().includes(text.toLowerCase()), `stderr echoes ${text.length} matched characters`);
+    }
+  }
+
+  it("--stdin exits 1 and names the line and column and kind of a forbidden term, not the term", async () => {
     const res = run(["--stdin"], { cwd: await project(), env: withTerms, input: "fine\nbuilt Zephyrine\n" });
     assert.equal(res.status, 1);
-    assert.match(res.stderr, /^stdin:2:7 {2}forbidden: "Zephyrine"$/m);
+    assert.match(res.stderr, /^stdin:2:7 {2}forbidden term$/m);
+    assert.match(res.stderr, /^1 forbidden term or phone number found$/m);
+    assertNoEcho(res, "Zephyrine");
   });
 
   it("takes newline-separated terms from FORBIDDEN_TERMS", async () => {
     const res = run(["--stdin"], { cwd: await project(), env: { FORBIDDEN_TERMS: "Zephyrine\nQuuxworks Title\n" }, input: "at Quuxworks\u00a0Title" });
     assert.equal(res.status, 1);
-    assert.match(res.stderr, /^stdin:1:4 {2}forbidden: "Quuxworks\u00a0Title"$/m);
+    assert.match(res.stderr, /^stdin:1:4 {2}forbidden term$/m);
+    assertNoEcho(res, "Quuxworks", "Title");
   });
 
   it("takes terms from .forbidden-terms in the working directory", async () => {
     const cwd = await project({ ".forbidden-terms": "# made up\nZephyrine\n" });
     const res = run(["--stdin"], { cwd, input: "built ZEPHYRINE\n" });
     assert.equal(res.status, 1);
-    assert.match(res.stderr, /^stdin:1:7 {2}forbidden: "ZEPHYRINE"$/m);
+    assert.match(res.stderr, /^stdin:1:7 {2}forbidden term$/m);
+    assertNoEcho(res, "Zephyrine");
     assert.equal(run(["--stdin"], { cwd, input: "the Zephyrineum\n" }).status, 0);
   });
 
-  it("--stdin exits 1 on a phone number", async () => {
-    assert.equal(run(["--stdin"], { cwd: await project(), env: withTerms, input: "call (720) 555-0100" }).status, 1);
+  it("--stdin exits 1 on a phone number, naming where and what kind but not the digits", async () => {
+    const res = run(["--stdin"], { cwd: await project(), env: withTerms, input: "call (720) 555-0100" });
+    assert.equal(res.status, 1);
+    assert.match(res.stderr, /^stdin:1:6 {2}phone number$/m);
+    assertNoEcho(res, "555", "720", "0100");
+  });
+
+  it("--stdin catches a number written with dash entities, without echoing it", async () => {
+    const res = run(["--stdin"], { cwd: await project(), env: withTerms, input: "<p>720&ndash;555&ndash;0100</p>" });
+    assert.equal(res.status, 1);
+    assert.match(res.stderr, /^stdin:1:4 {2}phone number$/m);
+    assertNoEcho(res, "555", "720", "0100", "ndash");
   });
 
   it("--stdin exits 0 on clean text", async () => {
@@ -255,7 +347,18 @@ describe("check-content CLI", () => {
     const cwd = await project({ "site/index.html": "<p>hi</p>", "site/a/index.html": "<p>Quuxworks&nbsp;Title</p>" });
     const res = run([], { cwd, env: withTerms });
     assert.equal(res.status, 1);
-    assert.match(res.stderr, /^site\/a\/index\.html:1:4 {2}forbidden: "Quuxworks&nbsp;Title"$/m);
+    assert.match(res.stderr, /^site\/a\/index\.html:1:4 {2}forbidden term$/m);
+    assertNoEcho(res, "Quuxworks", "Title", "nbsp");
+  });
+
+  it("scanning site/, a number in a file is reported by location and kind only", async () => {
+    const cwd = await project({ "site/a.html": "<p>ok</p>\n  <p>720&#x2011;555&#x2011;0100 and Zephyrine</p>" });
+    const res = run([], { cwd, env: withTerms });
+    assert.equal(res.status, 1);
+    assert.match(res.stderr, /^site\/a\.html:2:6 {2}phone number$/m);
+    assert.match(res.stderr, /^site\/a\.html:2:37 {2}forbidden term$/m);
+    assert.match(res.stderr, /^2 forbidden terms or phone numbers found$/m);
+    assertNoEcho(res, "555", "720", "0100", "2011", "Zephyrine");
   });
 
   it("fails when it finds nothing to scan, rather than passing an empty scan", async () => {
