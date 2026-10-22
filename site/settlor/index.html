@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Settlor - Zach Green</title>
-    <meta name="description" content="Zach Green's nearly five years as a Web Developer at Settlor: a platform-wide Python 3.14 upgrade, a remote print service, a Vue 3 component library and a public API.">
+    <meta name="description" content="Zach Green's nearly five years as a Web Developer at Settlor: a platform-wide Python 3.14 upgrade, a remote print service, a Vue component library and a public API.">
     <link rel="canonical" href="https://zachgreen.codes/settlor/">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="zachgreen.codes">
     <meta property="og:title" content="Settlor - Zach Green">
-    <meta property="og:description" content="Zach Green's nearly five years as a Web Developer at Settlor: a platform-wide Python 3.14 upgrade, a remote print service, a Vue 3 component library and a public API.">
+    <meta property="og:description" content="Zach Green's nearly five years as a Web Developer at Settlor: a platform-wide Python 3.14 upgrade, a remote print service, a Vue component library and a public API.">
     <meta property="og:url" content="https://zachgreen.codes/settlor/">
     <meta property="og:image" content="https://zachgreen.codes/img/og.png">
     <meta name="twitter:card" content="summary_large_image">
@@ -36,9 +36,8 @@
       <section class="card" data-accent="pink" aria-labelledby="settlor-title">
         <h1 id="settlor-title">Settlor</h1>
         <p class="card__meta">Web Developer, <time datetime="2021-12-06">December 2021</time> to now</p>
-        <p>Settlor is a title insurance and escrow company that runs on software it builds itself: an internal operations platform that covers title, closing, escrow accounting and e-recording, white-label portals for lenders and agents, and a public API. I've worked on that software for nearly five years.</p>
+        <p>Settlor is a title insurance and escrow company that runs on software it builds itself: an internal operations platform that covers title, closing, escrow accounting and e-recording, white-label portals for lenders and agents, and a public API.</p>
         <p>My title is Web Developer, and the work covers the whole stack: Flask and FastAPI services, PostgreSQL, Vue screens and Docker images. I've done more every year, and 2026 is my biggest year by far.</p>
-        <p>Here's the stack. Parts of it are mid-move: Python to 3.14, SQLAlchemy to 2.0, and the frontend from Vue 2 and webpack to Vue 3 and Vite.</p>
         <dl class="settlor-facts">
           <div>
             <dt>Backend</dt>
@@ -53,7 +52,7 @@
                 <li class="tag">Redis</li>
                 <li class="tag">Flask-SocketIO</li>
                 <li class="tag">FastAPI</li>
-                <li class="tag">Pydantic v2</li>
+                <li class="tag">Pydantic</li>
               </ul>
             </dd>
           </div>
@@ -61,8 +60,7 @@
             <dt>Frontend</dt>
             <dd>
               <ul class="tag-list">
-                <li class="tag">Vue 3</li>
-                <li class="tag">Vue 2</li>
+                <li class="tag">Vue</li>
                 <li class="tag">Vite</li>
                 <li class="tag">webpack</li>
                 <li class="tag">Pinia</li>
@@ -88,14 +86,12 @@
             <dt>Testing</dt>
             <dd>
               <ul class="tag-list">
-                <li class="tag">pytest</li>
                 <li class="tag">Vitest</li>
                 <li class="tag">Playwright</li>
               </ul>
             </dd>
           </div>
         </dl>
-        <p>This page has no code and no screenshots, and it calls each part of the platform by what it does rather than by its name. Below are five pieces of work, each told as the problem, what I did, the stack and roughly how big it was. Commit counts are approximate.</p>
       </section>
 
       <section class="card" id="modernization" data-accent="yellow" aria-labelledby="modernization-title">
@@ -106,7 +102,7 @@
             <dt>The problem</dt>
             <dd class="prose">
               <p>The upgrade covers about 23 repositories, each moving to Python 3.14 on new Debian base images.</p>
-              <p>TODO(zach): why the platform needed this upgrade.</p>
+              <p>The platform is upgrading from Debian bullseye to Debian trixie.</p>
             </dd>
           </div>
           <div>
@@ -153,7 +149,7 @@
             <dt>The problem</dt>
             <dd class="prose">
               <p>Print jobs come from the cloud app, and the printers are at office sites.</p>
-              <p>TODO(zach): why the service had to run on site.</p>
+              <p>It runs on site so the clients can control which printers are connected.</p>
             </dd>
           </div>
           <div>
@@ -191,28 +187,28 @@
       </section>
 
       <section class="card" id="component-library" data-accent="pink" aria-labelledby="component-library-title">
-        <h2 id="component-library-title">Vue 3 component library and the move off Vue 2</h2>
+        <h2 id="component-library-title">Vue component library and the Vue upgrade</h2>
         <p class="card__meta"><time datetime="2024">2024</time> to now</p>
         <dl class="settlor-facts">
           <div>
             <dt>The problem</dt>
             <dd class="prose">
-              <p>The frontend is moving from Vue 2 and webpack to Vue 3, Vite, Pinia and TypeScript, and there's an in-house Vue 3 design system.</p>
-              <p>TODO(zach): why the move, and what the design system is for.</p>
+              <p>The frontend is moving from an older Vue and webpack setup to the current Vue with Vite, Pinia and TypeScript, and there's an in-house Vue design system.</p>
+              <p>To keep up with modern software and safety, and to be able to use modern patterns with consistency.</p>
             </dd>
           </div>
           <div>
             <dt>What I did</dt>
             <dd class="prose">
-              <p>I'm the largest single contributor to both halves of this: the in-house Vue 3 design system, and moving screens off Vue 2.</p>
-              <p>TODO(zach): a component or pattern from the library worth calling out, described without internal names.</p>
+              <p>I'm the largest single contributor to both halves of this: the in-house Vue design system, and moving screens off the older Vue.</p>
+              <p>One I'd call out is StlrTable, the table component.</p>
             </dd>
           </div>
           <div>
             <dt>Stack</dt>
             <dd>
               <ul class="tag-list">
-                <li class="tag">Vue 3</li>
+                <li class="tag">Vue</li>
                 <li class="tag">TypeScript</li>
                 <li class="tag">Vite</li>
                 <li class="tag">Pinia</li>
@@ -232,13 +228,12 @@
 
       <section class="card" id="public-api" data-accent="yellow" aria-labelledby="public-api-title">
         <h2 id="public-api-title">Public API</h2>
-        <p class="card__meta">TODO(zach): the years you worked on it.</p>
         <dl class="settlor-facts">
           <div>
             <dt>The problem</dt>
             <dd class="prose">
-              <p>The platform has a public API, built on FastAPI with Pydantic v2 behind an API gateway.</p>
-              <p>TODO(zach): why the schema move and type checking were needed.</p>
+              <p>The platform has a public API, built on FastAPI with Pydantic behind an API gateway.</p>
+              <p>The schema move was to use the latest version of Pydantic.</p>
             </dd>
           </div>
           <div>
@@ -246,7 +241,7 @@
             <dd class="prose">
               <ul>
                 <li>Built FastAPI endpoints and their schemas.</li>
-                <li>Led the move to schemas written natively for Pydantic v2.</li>
+                <li>Led the move to schemas written natively for the latest version of Pydantic.</li>
                 <li>Rolled out type checking with <code>ty</code>, first as an advisory check and then as a blocking one, and wrote a design decision record for it.</li>
               </ul>
             </dd>
@@ -257,7 +252,7 @@
               <ul class="tag-list">
                 <li class="tag">Python</li>
                 <li class="tag">FastAPI</li>
-                <li class="tag">Pydantic v2</li>
+                <li class="tag">Pydantic</li>
                 <li class="tag">ty</li>
               </ul>
             </dd>
@@ -279,7 +274,6 @@
             <dt>The problem</dt>
             <dd class="prose">
               <p>The platform is adding AI features that run as background agent jobs, along with new developer tooling for the team.</p>
-              <p>TODO(zach): the problem behind this work, in a sentence or two.</p>
             </dd>
           </div>
           <div>
@@ -300,13 +294,6 @@
                 <li class="tag">Claude Code</li>
                 <li class="tag">Playwright</li>
               </ul>
-              <p>TODO(zach): what the agent jobs run on, for this list.</p>
-            </dd>
-          </div>
-          <div>
-            <dt>Scale</dt>
-            <dd class="prose">
-              <p>TODO(zach): a rough number, or drop this line until there is one.</p>
             </dd>
           </div>
         </dl>
