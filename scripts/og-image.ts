@@ -11,6 +11,7 @@
 
 import { chromium, type Browser } from "@playwright/test";
 
+import { requireWebFonts } from "./lib/site.ts";
 import { startServer } from "./serve.ts";
 
 export const OG_IMAGE = "site/img/og.png";
@@ -18,9 +19,6 @@ export const ICONS = [
   { file: "site/favicon-32.png", size: 32 },
   { file: "site/apple-touch-icon.png", size: 180 },
 ] as const;
-
-/** The web fonts the preview must be set in (spec §5.4). */
-const FAMILIES = ["Calling Code", "MonoLisa"];
 
 /** Screenshots `${baseUrl}/__fixtures__/og.html` at 1200x630 into `outFile`. */
 export async function renderOgImage(browser: Browser, baseUrl: string, outFile: string): Promise<void> {
@@ -30,15 +28,8 @@ export async function renderOgImage(browser: Browser, baseUrl: string, outFile: 
     const response = await page.goto(url);
     if (!response?.ok()) throw new Error(`${url} answered ${response?.status()}`);
 
-    const loaded = await page.evaluate(async () => {
-      await document.fonts.ready;
-      return [...document.fonts].filter((face) => face.status === "loaded").map((face) => face.family.replaceAll('"', ""));
-    });
-    const missing = FAMILIES.filter((family) => !loaded.includes(family));
-    if (missing.length > 0) {
-      throw new Error(`${missing.join(" and ")} did not load. Copy the font files into site/fonts/ first (spec §5.4).`);
-    }
-
+    // The preview is set in the web fonts, never in a fallback.
+    await requireWebFonts(page);
     await page.screenshot({ path: outFile, type: "png" });
   } finally {
     await page.close();

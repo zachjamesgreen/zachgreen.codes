@@ -2,29 +2,24 @@
 // in PAGES and on the styled 404 page. A page in PAGES gets every check here,
 // and tests/unit/pages.test.ts makes sure every page is in PAGES.
 
-import { existsSync } from "node:fs";
-
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 import { codePointsOutside, MONOLISA_RANGES } from "../../scripts/font-metrics.ts";
+import { CONTACT_EMAIL, FONT_FAMILIES, haveFonts, loadedFamilies, NOT_FOUND_PATH, ORIGIN } from "../../scripts/lib/site.ts";
 import { AXE_TAGS } from "../helpers/axe.ts";
 import { PAGES } from "../helpers/pages.ts";
 
-const ORIGIN = "https://zachgreen.codes";
 const WIDTHS = [320, 768, 1280] as const;
-const EMAIL = "zachjamesgreen@gmail.com";
 
 /** Any unknown path gets the styled 404 page, with a 404 status. */
-const NOT_FOUND = { path: "/nope", name: "404" } as const;
+const NOT_FOUND = { path: NOT_FOUND_PATH, name: "404" } as const;
 
 /** Every page that carries the shared header and footer. */
 const ALL: readonly { path: string; name: string }[] = [...PAGES, NOT_FOUND];
 
-// The fonts are never committed, so CI runs without them (spec §5.4).
-const HAVE_FONTS = ["callingcode-regular-webfont.woff2", "callingcode-bold-webfont.woff2", "0-MonoLisaCode-normal.woff2"].every(
-  (file) => existsSync(new URL(`../../site/fonts/${file}`, import.meta.url)),
-);
+// The fonts are never committed, so CI runs without them.
+const HAVE_FONTS = haveFonts();
 const FONT_FILE = /\/fonts\/[^/\s"]+\.woff2\b/;
 
 /** Without the fonts, every font request fails: expected in CI, a bug anywhere else. */
@@ -33,13 +28,6 @@ const missingFont = (text: string) => !HAVE_FONTS && FONT_FILE.test(text);
 /** The root's scroll and client widths: equal unless something sticks out sideways. */
 const rootWidths = (page: Page) =>
   page.evaluate(() => ({ scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth }));
-
-/** The families of the web fonts that have finished loading. */
-const loadedFamilies = (page: Page) =>
-  page.evaluate(async () => {
-    await document.fonts.ready;
-    return [...document.fonts].filter((face) => face.status === "loaded").map((face) => face.family.replaceAll('"', ""));
-  });
 
 /** What every page shares, read once per page. */
 async function survey(page: Page) {
@@ -144,7 +132,7 @@ for (const { path, name } of ALL) {
       test.skip(!HAVE_FONTS, "needs the web fonts in site/fonts/");
       await page.setViewportSize({ width: 320, height: 800 });
       await page.goto(path);
-      expect(await loadedFamilies(page)).toEqual(expect.arrayContaining(["MonoLisa", "Calling Code"]));
+      expect(await loadedFamilies(page)).toEqual(expect.arrayContaining([...FONT_FAMILIES]));
       const { scrollWidth, clientWidth } = await rootWidths(page);
       expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
     });
@@ -216,8 +204,8 @@ for (const { path, name } of ALL) {
       expect(source).not.toMatch(/zachjamesgreen@|@gmail|gmail\.com/);
       await page.goto(path);
       const email = page.locator('body > footer a[href^="mailto:"]');
-      await expect(email).toHaveAttribute("href", `mailto:${EMAIL}`);
-      await expect(email).toHaveText(EMAIL);
+      await expect(email).toHaveAttribute("href", `mailto:${CONTACT_EMAIL}`);
+      await expect(email).toHaveText(CONTACT_EMAIL);
     });
 
     // A linked card's ::after covers the whole card (Task 2).

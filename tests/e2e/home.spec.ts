@@ -3,6 +3,8 @@
 
 import { expect, test } from "@playwright/test";
 
+import { CONTACT_EMAIL, NOT_FOUND_PATH } from "../../scripts/lib/site.ts";
+
 const ACCENTS = /^(yellow|pink|blue)$/;
 
 test.describe("home", () => {
@@ -90,12 +92,12 @@ test.describe("home", () => {
     const contact = page.locator("#contact");
     await expect(contact.locator('a[href="https://github.com/zachjamesgreen"]')).toBeVisible();
     await expect(contact.locator('a[href="https://www.linkedin.com/in/zachjamesgreen/"]')).toBeVisible();
-    await expect(contact.locator('a[href="mailto:zachjamesgreen@gmail.com"]')).toBeVisible();
+    await expect(contact.locator(`a[href="mailto:${CONTACT_EMAIL}"]`)).toBeVisible();
   });
 });
 
 test("an unknown URL gets a 404 status and the styled 404 page, with the shared header and a link home", async ({ page }) => {
-  const response = await page.goto("/nope");
+  const response = await page.goto(NOT_FOUND_PATH);
   expect(response!.status()).toBe(404);
   await expect(page.locator("h1")).toHaveText(/not found/i);
   await expect(page.locator("body > header.site-header")).toBeVisible();

@@ -16,11 +16,10 @@
 //  - linkedin.com answers bots with 999, whatever the URL.
 
 import { LinkChecker, LinkState, type LinkResult, type RedirectInfo } from "linkinator";
+import { CONTACT_EMAIL } from "./lib/site.ts";
 import { startServer } from "./serve.ts";
 
 const SKIP = [String.raw`^https://zachgreen\.codes`, String.raw`^https://stats\.zachgreen\.codes`, String.raw`linkedin\.com`];
-
-const CONTACT = "zachjamesgreen@gmail.com";
 
 // The 404 page is only reachable by a missing URL, so it is a crawl start of its own.
 const ENTRY_POINTS = ["/", "/404.html"];
@@ -78,7 +77,7 @@ const skipped = links.filter((link) => link.state === LinkState.SKIPPED && !link
 const checked = links.filter((link) => link.state === LinkState.OK);
 const external = checked.filter((link) => !link.url.startsWith(server.url));
 
-const wrongAddress = mailto.filter((link) => mailtoAddress(link.url) !== CONTACT);
+const wrongAddress = mailto.filter((link) => mailtoAddress(link.url) !== CONTACT_EMAIL);
 
 console.log(
   `Checked ${checked.length} links (${external.length} external), ${mailto.length} mailto, skipped ${skipped.length}, broken ${broken.length}.`,
@@ -93,9 +92,9 @@ for (const { url, targetUrl } of internalRedirects.values()) {
   problems.push(`REDIRECT ${url} -> ${targetUrl ?? "?"}  (linked from ${parents || "?"}); link to the final URL`);
 }
 for (const link of wrongAddress) {
-  problems.push(`MAILTO ${link.url} is not ${CONTACT}  (linked from ${link.parent ?? "?"})`);
+  problems.push(`MAILTO ${link.url} is not ${CONTACT_EMAIL}  (linked from ${link.parent ?? "?"})`);
 }
-if (mailto.length === 0) problems.push(`MAILTO no mailto: link found, expected ${CONTACT} on the pages`);
+if (mailto.length === 0) problems.push(`MAILTO no mailto: link found, expected ${CONTACT_EMAIL} on the pages`);
 for (const problem of problems) console.error(`  ${problem}`);
 
 if (!passed || broken.length > 0 || problems.length > 0) process.exit(1);
