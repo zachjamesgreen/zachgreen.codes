@@ -1,5 +1,5 @@
 /*
- * zachgreen.codes design system (spec §5): dark neo-brutalism, "dark cards,
+ * zachgreen.codes design system: dark neo-brutalism, "dark cards,
  * candy shadows". Dark blocks with thick off-white borders, square corners,
  * and hard offset shadows with no blur. Color lives in the shadows and the
  * headings, and each block gets one accent.
@@ -10,7 +10,7 @@
 
 @layer reset, tokens, fonts, base, components, pages, utilities;
 
-/* Cross-document view transitions (spec §4): the default cross-fade, a little
+/* Cross-document view transitions: the default cross-fade, a little
    quicker, and only for visitors who haven't asked for reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   @view-transition {
@@ -52,7 +52,7 @@
 
 @layer tokens {
   :root {
-    /* Color, in oklch() from the spec's hex values. The ratios are WCAG 2
+    /* Color, in oklch() from the design's hex values. The ratios are WCAG 2
        contrast measured with culori; tests/unit/contrast.test.ts checks every
        pair and every number written here. */
     --bg: oklch(20.7% 0.01 285deg); /* the page, ≈ #17171c */
@@ -115,7 +115,7 @@
 }
 
 /*
- * Fonts (spec §5.3). The files live in /fonts/, which is never committed.
+ * Fonts. The files live in /fonts/, which is never committed.
  *
  * MonoLisa ships as subsets that hold only glyphs inside their unicode-range.
  * The site uses two, normal and italic: Basic Latin and box drawing (for the
@@ -333,7 +333,7 @@
     }
   }
 
-  /* As loud as everything else (spec §5.1): a thick accent ring, offset so it
+  /* As loud as everything else: a thick accent ring, offset so it
      never merges with a border. */
   :focus-visible {
     outline: var(--border-w) solid var(--focus);

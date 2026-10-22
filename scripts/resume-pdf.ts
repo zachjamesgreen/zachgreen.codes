@@ -1,5 +1,5 @@
-// Prints the resume page to the PDF that /resume/ offers for download (spec
-// §6.5). The page is the single source: Playwright's Chromium lays it out with
+// Prints the resume page to the PDF that /resume/ offers for download. The
+// page is the single source: Playwright's Chromium lays it out with
 // css/print.css, in the site's own fonts, on US Letter. The PDF is committed,
 // because the server has no build step.
 //

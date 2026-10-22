@@ -1,4 +1,4 @@
-// Link check (spec §9). Starts the same static server as `pnpm dev` and has
+// Link check. Starts the same static server as `pnpm dev` and has
 // linkinator crawl every page it can reach from `/` and from the 404 page,
 // checking internal links, in-page fragments and external links alike. On top
 // of what linkinator does, it fails when

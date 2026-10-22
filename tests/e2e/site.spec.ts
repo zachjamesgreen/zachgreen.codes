@@ -127,7 +127,7 @@ for (const { path, name } of ALL) {
       }
     });
 
-    // Review Focus 1: MonoLisa is wider than the fallback fonts.
+    // MonoLisa is wider than the fallback fonts, so fitting in them proves nothing here.
     test("with the web fonts loaded, nothing overflows sideways at 320px", async ({ page }) => {
       test.skip(!HAVE_FONTS, "needs the web fonts in site/fonts/");
       await page.setViewportSize({ width: 320, height: 800 });
@@ -157,7 +157,7 @@ for (const { path, name } of ALL) {
       for (const { href, current } of links) expect(current, `${href}`).toBe(href === path ? "page" : null);
     });
 
-    // The CSP is `style-src 'self'` with no inline scripts (spec §8).
+    // The CSP is `style-src 'self'` with no inline scripts (deploy/nginx/snippets/security-headers.conf).
     test("has no inline styles or scripts", async ({ page }) => {
       await page.goto(path);
       const inline = await page.evaluate(() => ({
@@ -198,7 +198,7 @@ for (const { path, name } of ALL) {
       expect(misses).toEqual([]);
     });
 
-    // Spec §6.1: a mailto link, lightly obfuscated against scrapers.
+    // A mailto link, lightly obfuscated against scrapers.
     test("the footer email is a mailto link whose address is entity-encoded in the source", async ({ page }) => {
       const source = await (await page.request.get(path)).text();
       expect(source).not.toMatch(/zachjamesgreen@|@gmail|gmail\.com/);
@@ -208,7 +208,8 @@ for (const { path, name } of ALL) {
       await expect(email).toHaveText(CONTACT_EMAIL);
     });
 
-    // A linked card's ::after covers the whole card (Task 2).
+    // A linked card's ::after stretches its link over the whole card, so it can cover
+    // the card's other controls.
     test("nothing inside a linked card is covered by its stretched link", async ({ page }) => {
       await page.goto(path);
       const covered = await page.locator(".card:has(.card__link) :is(a[href], button)").evaluateAll((controls) =>
@@ -224,7 +225,7 @@ for (const { path, name } of ALL) {
       expect(covered).toEqual([]);
     });
 
-    // Review Focus 3: a keyboard-only visitor.
+    // A keyboard-only visitor.
     test("keyboard: the first Tab shows the skip link, Enter moves focus to main, and every control shows a focus outline", async ({
       page,
     }) => {
@@ -276,7 +277,7 @@ for (const { path, name } of ALL) {
   });
 }
 
-// Review Focus 2: JavaScript off, or blocked. The site has none of its own, so
+// JavaScript off, or blocked. The site has none of its own, so
 // every page and every header link must work without it.
 test.describe("with JavaScript disabled", () => {
   test.use({ javaScriptEnabled: false });

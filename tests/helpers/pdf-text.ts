@@ -1,4 +1,4 @@
-// Compares the resume PDF with the resume page by their words (spec §6.5).
+// Compares the resume PDF with the resume page by their words.
 // Bytes and layout differ between renders and between machines with and
 // without the fonts, so the check is a bag of words: the same words, the same
 // number of times, in any order.

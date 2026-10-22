@@ -19,7 +19,7 @@ import { runAssertions } from "./assertions.ts";
 
 const execFileAsync = promisify(execFile);
 
-// nginx 1.28.3 is the version on the server (spec §3.2). The digest pins the exact image.
+// nginx 1.28.3 is the version on the server. The digest pins the exact image.
 const IMAGE = "nginx:1.28.3@sha256:146adea4768b83c607d0bdfa4188464e3da6e0a3ad4475db1d1d8f64f27c29cc";
 // `after` removes the container. If a run is killed first, find the leftover with
 // `docker ps -a --filter label=zachgreen.codes.test=nginx`.
@@ -64,7 +64,7 @@ http {
 }
 `;
 
-// The server's catch-all (spec §3.2): unknown hostnames get 444 and unknown SNI names a
+// The server's catch-all: unknown hostnames get 444 and unknown SNI names a
 // refused handshake. With it in place a request only reaches a zachgreen.codes block if
 // that block's server_name really matches.
 const DEFAULT_SERVER = `server {

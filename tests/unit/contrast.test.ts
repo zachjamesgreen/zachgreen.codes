@@ -1,4 +1,4 @@
-// The color tokens in site/css/site.css must meet WCAG 2.2 AA (spec §5.2):
+// The color tokens in site/css/site.css must meet WCAG 2.2 AA:
 // 4.5:1 for body text, 3:1 for large text and UI borders. The ratios written
 // next to the tokens are checked too, so the comments can't go stale.
 

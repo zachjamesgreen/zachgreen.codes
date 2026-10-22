@@ -1,4 +1,4 @@
-// Renders the site's raster images (spec §8): the 1200x630 social preview from
+// Renders the site's raster images: the 1200x630 social preview from
 // scripts/og.html, and the PNG icons from site/favicon.svg. The PNGs are
 // committed, because the server has no build step.
 //

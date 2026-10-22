@@ -1,4 +1,4 @@
-// Head metadata, icons and the crawler files (spec §8, "Meta"): Open Graph and
+// Head metadata, icons and the crawler files: Open Graph and
 // Twitter tags on every page, a theme-color that matches the page background,
 // and icon links that resolve. Titles, descriptions and the shared shell are in
 // site.spec.ts.

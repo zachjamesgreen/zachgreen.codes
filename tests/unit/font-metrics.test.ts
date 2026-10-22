@@ -149,7 +149,7 @@ describe("fallbackOverrides", () => {
 });
 
 // Ties site.css to the constants above, so the @font-face rules and the
-// coverage check Task 3 runs against MONOLISA_RANGES can't drift apart.
+// coverage check site.spec.ts runs against MONOLISA_RANGES can't drift apart.
 describe("site.css @font-face rules", () => {
   it("loads, for each MONOLISA_RANGES entry, the vendor file whose range holds it, with the vendor's unicode-range", () => {
     const subsets = MONOLISA_RANGES.map(([first, last]) => {
