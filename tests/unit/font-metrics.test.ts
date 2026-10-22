@@ -3,31 +3,72 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { describe, it } from "node:test";
 
+import { create } from "fontkitten";
+
 import {
   MONOLISA_RANGES,
-  MONOLISA_SUBSETS,
   codePointsOutside,
   fallbackOverrides,
   fontFaceDescriptors,
   subsetOf,
 } from "../../scripts/font-metrics.ts";
 
+const text = (...codePoints: number[]) => String.fromCodePoint(...codePoints);
+const digits = (cp: number) => cp.toString(16).toUpperCase().padStart(4, "0");
+const hex = (cp: number) => `U+${digits(cp)}`;
+
+const css = await readFile(new URL("../../site/css/site.css", import.meta.url), "utf8");
+const faces = [...css.matchAll(/@font-face\s*\{([^}]*)\}/g)].map(([, body]) => {
+  const get = (name: string) => new RegExp(`(?:^|[;{\\s])${name}\\s*:\\s*([^;]+);`).exec(body!)?.[1]?.trim();
+  return {
+    family: get("font-family")?.replace(/^["']|["']$/g, ""),
+    style: get("font-style") ?? "normal",
+    weight: get("font-weight"),
+    unicodeRange: get("unicode-range"),
+    src: get("src") ?? "",
+    body: body!,
+  };
+});
+const monolisaFaces = faces.filter((face) => face.family === "MonoLisa");
+
+// The commercial fonts are never committed, so tests that open them only run
+// where site/fonts/ exists; CI skips them.
+const fontsDir = new URL("../../site/fonts/", import.meta.url);
+const noFonts = !existsSync(fontsDir) && "site/fonts/ is absent (CI has no fonts), so the font files can't be read";
+
 describe("MONOLISA_RANGES", () => {
-  it("is the shipped subsets: Basic Latin, box drawing and miscellaneous symbols, in order", () => {
+  it("is Basic Latin without DEL, then box drawing, in ascending order", () => {
     assert.deepEqual(MONOLISA_RANGES, [
-      [0x0020, 0x007f],
+      [0x0020, 0x007e],
       [0x2500, 0x257f],
-      [0x2600, 0x26ff],
     ]);
   });
 
-  it("matches the vendor's unicode-range for every shipped subset", () => {
-    for (const range of MONOLISA_RANGES) {
-      const subset = MONOLISA_SUBSETS.find(({ range: [first] }) => first === range[0]);
-      assert.ok(subset, `no vendor subset starts at U+${range[0].toString(16)}`);
-      assert.deepEqual(subset.range, range);
-    }
-  });
+  // The guard against MONOLISA_RANGES claiming a glyph MonoLisa doesn't have:
+  // every code point it lists must be in a font file site.css actually loads.
+  for (const style of ["normal", "italic"] as const) {
+    it(`has a glyph for every code point in the shipped ${style} files`, { skip: noFonts }, async () => {
+      const files = monolisaFaces
+        .filter((face) => face.style === style)
+        .map((face) => /url\("?\/fonts\/([^")]+)"?\)/.exec(face.src)?.[1]);
+      assert.ok(files.length > 0, `site.css loads no ${style} MonoLisa file`);
+      const glyphs = new Set<number>();
+      for (const file of files) {
+        assert.ok(file, `a ${style} MonoLisa face has no /fonts/ url`);
+        const font = create(await readFile(new URL(file, fontsDir)));
+        if (font.isCollection) assert.fail(`${file} is a font collection, not a single font`);
+        for (const cp of font.characterSet) glyphs.add(cp);
+      }
+      const missing = MONOLISA_RANGES.flatMap(([first, last]) =>
+        Array.from({ length: last - first + 1 }, (_, i) => first + i).filter((cp) => !glyphs.has(cp)),
+      );
+      assert.deepEqual(
+        missing.map(hex),
+        [],
+        `MONOLISA_RANGES claims ${missing.length} code points that no shipped ${style} file (${files.join(", ")}) can draw`,
+      );
+    });
+  }
 });
 
 describe("codePointsOutside", () => {
@@ -40,17 +81,24 @@ describe("codePointsOutside", () => {
     assert.deepEqual(codePointsOutside("naïve café — café’s ‘ï’", MONOLISA_RANGES), [0xe9, 0xef, 0x2014, 0x2018, 0x2019]);
   });
 
-  it("ignores whitespace, including no-break and em spaces", () => {
-    assert.deepEqual(codePointsOutside("a\tb\nc d e ", MONOLISA_RANGES), []);
+  it("reports the terminal snapshot's symbols, which MonoLisa's web package can't draw", () => {
+    // ★ ↑ ↓ › … as used in the tagshelf TUI.
+    assert.deepEqual(codePointsOutside(text(0x2605, 0x2191, 0x2193, 0x203a, 0x2026), MONOLISA_RANGES), [
+      0x2026, 0x203a, 0x2191, 0x2193, 0x2605,
+    ]);
+  });
+
+  it("ignores whitespace, including no-break, em and narrow no-break spaces", () => {
+    assert.deepEqual(codePointsOutside(`a\tb\nc${text(0xa0)}d${text(0x2003)}e${text(0x202f)}`, MONOLISA_RANGES), []);
   });
 
   it("treats range ends as inclusive", () => {
-    assert.deepEqual(codePointsOutside("─╿☀⛿", MONOLISA_RANGES), []);
-    assert.deepEqual(codePointsOutside("⓿▀", MONOLISA_RANGES), [0x24ff, 0x2580]);
+    assert.deepEqual(codePointsOutside(text(0x21, 0x7e, 0x2500, 0x257f), MONOLISA_RANGES), []);
+    assert.deepEqual(codePointsOutside(text(0x7f, 0x24ff, 0x2580), MONOLISA_RANGES), [0x7f, 0x24ff, 0x2580]);
   });
 
   it("counts an astral character as one code point, not two surrogates", () => {
-    assert.deepEqual(codePointsOutside("ok 😀", MONOLISA_RANGES), [0x1f600]);
+    assert.deepEqual(codePointsOutside(`ok ${text(0x1f600)}`, MONOLISA_RANGES), [0x1f600]);
   });
 
   it("uses the ranges it is given", () => {
@@ -60,7 +108,7 @@ describe("codePointsOutside", () => {
 });
 
 describe("subsetOf", () => {
-  it("names the vendor files for a code point MonoLisa covers", () => {
+  it("names the vendor files whose unicode-range holds a code point", () => {
     assert.deepEqual(subsetOf(0x2192), {
       normal: "8-MonoLisaCode-normal.woff2",
       italic: "9-MonoLisaCode-italic.woff2",
@@ -69,7 +117,7 @@ describe("subsetOf", () => {
     assert.equal(subsetOf(0x41)?.normal, "0-MonoLisaCode-normal.woff2");
   });
 
-  it("returns undefined for a code point no MonoLisa file covers", () => {
+  it("returns undefined for a code point no MonoLisa file's range holds", () => {
     assert.equal(subsetOf(0xe9), undefined); // é: the web package has no Latin-1 subset
     assert.equal(subsetOf(0x2014), undefined); // em dash: no General Punctuation subset either
   });
@@ -101,39 +149,24 @@ describe("fallbackOverrides", () => {
 
 // Ties site.css to the constants above, so the @font-face rules and the
 // coverage check Task 3 runs against MONOLISA_RANGES can't drift apart.
-describe("site.css @font-face rules", async () => {
-  const css = await readFile(new URL("../../site/css/site.css", import.meta.url), "utf8");
-  const faces = [...css.matchAll(/@font-face\s*\{([^}]*)\}/g)].map(([, body]) => {
-    const get = (name: string) => new RegExp(`(?:^|[;{\\s])${name}\\s*:\\s*([^;]+);`).exec(body!)?.[1]?.trim();
-    return {
-      family: get("font-family")?.replace(/^["']|["']$/g, ""),
-      style: get("font-style") ?? "normal",
-      weight: get("font-weight"),
-      unicodeRange: get("unicode-range"),
-      src: get("src") ?? "",
-      body: body!,
-    };
-  });
-
-  const hex = (cp: number) => cp.toString(16).toUpperCase().padStart(4, "0");
-
-  it("declares one MonoLisa face per shipped range and style, with the vendor file and range", () => {
-    const monolisa = faces.filter((face) => face.family === "MonoLisa");
-    const expected = MONOLISA_RANGES.flatMap((range) => {
-      const subset = subsetOf(range[0])!;
-      return (["normal", "italic"] as const).map((style) => ({
-        style,
-        unicodeRange: `U+${hex(range[0])}-${hex(range[1])}`,
-        file: subset[style],
-      }));
+describe("site.css @font-face rules", () => {
+  it("loads, for each MONOLISA_RANGES entry, the vendor file whose range holds it, with the vendor's unicode-range", () => {
+    const subsets = MONOLISA_RANGES.map(([first, last]) => {
+      const subset = subsetOf(first);
+      assert.ok(subset, `no vendor subset holds ${hex(first)}`);
+      assert.ok(last <= subset.range[1], `${hex(first)}-${hex(last)} runs past ${subset.normal}'s range`);
+      return subset;
     });
-    assert.equal(monolisa.length, expected.length);
-    for (const { style, unicodeRange, file } of expected) {
-      const face = monolisa.find((f) => f.style === style && f.unicodeRange === unicodeRange);
-      assert.ok(face, `no ${style} MonoLisa face for ${unicodeRange}`);
-      assert.ok(face.src.includes(`/fonts/${file}`), `${style} ${unicodeRange} should load /fonts/${file}`);
-      assert.equal(face.weight, "1 900");
-      assert.match(face.body, /font-display\s*:\s*swap/);
+    assert.equal(monolisaFaces.length, subsets.length * 2, "one normal and one italic face per shipped subset, and no others");
+    for (const subset of subsets) {
+      const unicodeRange = `${hex(subset.range[0])}-${digits(subset.range[1])}`;
+      for (const style of ["normal", "italic"] as const) {
+        const face = monolisaFaces.find((f) => f.style === style && f.unicodeRange === unicodeRange);
+        assert.ok(face, `no ${style} MonoLisa face with unicode-range ${unicodeRange}`);
+        assert.ok(face.src.includes(`/fonts/${subset[style]}`), `${style} ${unicodeRange} should load /fonts/${subset[style]}`);
+        assert.equal(face.weight, "1 900");
+        assert.match(face.body, /font-display\s*:\s*swap/);
+      }
     }
   });
 
@@ -166,12 +199,10 @@ describe("site.css @font-face rules", async () => {
     }
   });
 
-  // Needs the commercial fonts and DejaVu Sans Mono, so it only runs on a
-  // machine that has them; CI skips it.
-  const fontsDir = new URL("../../site/fonts/", import.meta.url);
+  // Also needs DejaVu Sans Mono, the font the descriptors are measured against.
   const dejaVu = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf";
-  const haveFonts = existsSync(new URL("0-MonoLisaCode-normal.woff2", fontsDir)) && existsSync(dejaVu);
-  it("fallback descriptors equal what scripts/font-metrics.ts computes", { skip: !haveFonts && "fonts not present" }, async () => {
+  const noMetrics = noFonts || (!existsSync(dejaVu) && `${dejaVu} is absent`);
+  it("fallback descriptors equal what scripts/font-metrics.ts computes", { skip: noMetrics }, async () => {
     const { fromFile } = await import("@capsizecss/unpack/fs");
     const fallbackMetrics = await fromFile(dejaVu);
     for (const [family, weight, file] of [

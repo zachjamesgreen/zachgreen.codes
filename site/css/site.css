@@ -117,12 +117,14 @@
 /*
  * Fonts (spec §5.3). The files live in /fonts/, which is never committed.
  *
- * MonoLisa ships as subsets that hold only the glyphs inside their
- * unicode-range. The site uses three, normal and italic: Basic Latin, box
- * drawing (the terminal snapshot) and Miscellaneous Symbols. Anything else,
- * such as é, — or ★, comes from "MonoLisa Fallback", which is sized to the
- * same advance width so terminal columns stay aligned.
- * scripts/font-metrics.ts keeps MONOLISA_RANGES in step with these rules.
+ * MonoLisa ships as subsets that hold only glyphs inside their unicode-range.
+ * The site uses two, normal and italic: Basic Latin and box drawing (for the
+ * terminal snapshot). Anything else, such as é, —, ↑ or ★, comes from
+ * "MonoLisa Fallback", which is sized to the same advance width so terminal
+ * columns stay aligned. The unicode-range values are the vendor's, verbatim:
+ * they decide which file the browser downloads. What the glyphs can actually
+ * render is MONOLISA_RANGES in scripts/font-metrics.ts (U+007F, for one, has
+ * no glyph), and a unit test checks both against the files.
  *
  * The fallback faces are local monospace fonts with size-adjust and
  * ascent/descent/line-gap overrides from `node scripts/font-metrics.ts`
@@ -199,24 +201,6 @@
     font-style: italic;
     font-display: swap;
     unicode-range: U+2500-257F;
-  }
-
-  @font-face {
-    font-family: MonoLisa;
-    src: url("/fonts/2-MonoLisaCode-normal.woff2") format("woff2");
-    font-weight: 1 900;
-    font-style: normal;
-    font-display: swap;
-    unicode-range: U+2600-26FF;
-  }
-
-  @font-face {
-    font-family: MonoLisa;
-    src: url("/fonts/3-MonoLisaCode-italic.woff2") format("woff2");
-    font-weight: 1 900;
-    font-style: italic;
-    font-display: swap;
-    unicode-range: U+2600-26FF;
   }
 
   @font-face {
