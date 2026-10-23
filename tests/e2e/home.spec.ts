@@ -1,9 +1,8 @@
 // The home page and the 404 page. The shell and the site-wide
 // rules are in site.spec.ts.
 
-import { expect, test } from "@playwright/test";
-
 import { CONTACT_EMAIL, NOT_FOUND_PATH } from "../../scripts/lib/site.ts";
+import { expect, test } from "../helpers/test.ts";
 
 const ACCENTS = /^(yellow|pink|blue)$/;
 

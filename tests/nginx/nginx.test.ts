@@ -16,7 +16,7 @@ import { after, before, test } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import { promisify } from "node:util";
 
-import { runAssertions, runStatsAssertions } from "./assertions.ts";
+import { runAssertions, runStatsAssertions, STUB_HANG_HEADER } from "./assertions.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -90,10 +90,19 @@ ssl_prefer_server_ciphers off;
 ssl_ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384";
 `;
 
+// What the stub answers any other path with: the proxy headers it was sent, as JSON, so the
+// test can check them.
+const ECHO_BODY = `'{"host":"$http_host","xRealIp":"$http_x_real_ip","xForwardedFor":"$http_x_forwarded_for","xForwardedProto":"$http_x_forwarded_proto"}'`;
+
+// Where the stub sends a /api/send that carries the hang header: a listener (BLACK_HOLE)
+// that accepts the connection and never answers, as an Umami stuck on its database would.
+const BLACK_HOLE_PORT = 3001;
+
 // Stands in for Umami behind the stats vhost: the upstream at 127.0.0.1:3000 inside the
 // container. Like Umami, it sends its own CSP, the CORS header the tracker needs, and an
 // X-Powered-By that nginx must hide. /insights and /login answer as Umami's would; any
-// other path answers with the proxy headers it was sent, so the test can check them.
+// other path answers with the proxy headers it was sent, /api/send included, so the test
+// can check them, unless the request asks for a hang.
 const UMAMI_STUB = `server {
     listen 127.0.0.1:3000;
     server_name _;
@@ -113,11 +122,32 @@ const UMAMI_STUB = `server {
         return 200 "<!DOCTYPE html><title>Stub login</title>";
     }
 
+    location = /api/send {
+        error_page 418 = @black_hole;
+        if ($http_${STUB_HANG_HEADER.replaceAll("-", "_")}) {
+            return 418;
+        }
+        default_type application/json;
+        return 200 ${ECHO_BODY};
+    }
+
+    location @black_hole {
+        proxy_pass http://127.0.0.1:${BLACK_HOLE_PORT};
+    }
+
     location / {
         default_type application/json;
-        return 200 '{"host":"$http_host","xRealIp":"$http_x_real_ip","xForwardedFor":"$http_x_forwarded_for","xForwardedProto":"$http_x_forwarded_proto"}';
+        return 200 ${ECHO_BODY};
     }
 }
+`;
+
+// A listener on the loopback that accepts every connection and then says nothing, holding
+// it open. The stock nginx image has perl, and nothing else that listens.
+const BLACK_HOLE = `use IO::Socket::INET;
+my $listener = IO::Socket::INET->new(LocalAddr => "127.0.0.1", LocalPort => ${BLACK_HOLE_PORT}, Listen => 16, ReuseAddr => 1) or die "listen: $!";
+my @held;
+while (my $connection = $listener->accept) { push @held, $connection }
 `;
 
 const STUB_PAGE = `<!DOCTYPE html>
@@ -192,6 +222,8 @@ before(async () => {
   );
   ports = { http: await hostPort(container, 80), https: await hostPort(container, 443) };
   await waitUntilServing(container);
+  await docker("exec", "--detach", container, "perl", "-e", BLACK_HOLE);
+  await waitUntilListening(container, BLACK_HOLE_PORT);
 });
 
 after(async () => {
@@ -229,6 +261,7 @@ test("the stats config passes the shared stats assertions", async () => {
     resolveTo: "127.0.0.1",
     insecureTls: true,
     echoUpstream: true,
+    silentUpstream: true,
   });
 });
 
@@ -279,6 +312,15 @@ async function waitUntilServing(id: string): Promise<void> {
       throw new Error(`nginx ${running === "true" ? "didn't start in time" : "exited"}:\n${stdout}${stderr}`);
     }
     await delay(200);
+  }
+}
+
+/** Waits until something in the container accepts connections on 127.0.0.1:`port`. */
+async function waitUntilListening(id: string, port: number): Promise<void> {
+  const deadline = Date.now() + 10_000;
+  while (!(await succeeds("docker", "exec", id, "bash", "-c", `exec 3<>/dev/tcp/127.0.0.1/${port}`))) {
+    if (Date.now() > deadline) throw new Error(`nothing listens on 127.0.0.1:${port} in the container`);
+    await delay(100);
   }
 }
 

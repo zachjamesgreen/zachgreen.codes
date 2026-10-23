@@ -3,16 +3,14 @@
 // and icon links that resolve. Titles, descriptions and the shared shell are in
 // site.spec.ts.
 
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { formatHex, parse } from "culori";
 
-import { NOT_FOUND_PATH, ORIGIN } from "../../scripts/lib/site.ts";
-import { PAGES } from "../helpers/pages.ts";
+import { ORIGIN } from "../../scripts/lib/site.ts";
+import { ALL_PAGES, NOT_FOUND, PAGES } from "../helpers/pages.ts";
+import { expect, test } from "../helpers/test.ts";
 
 const OG_IMAGE = `${ORIGIN}/img/og.png`;
-
-/** Any unknown path gets the styled 404 page, which is not in the sitemap. */
-const NOT_FOUND = { path: NOT_FOUND_PATH, name: "404" } as const;
 
 const meta = (page: Page, selector: string) => page.locator(`head > meta[${selector}]`).getAttribute("content");
 
@@ -46,7 +44,7 @@ for (const { path, name } of PAGES) {
   });
 }
 
-for (const { path, name } of [...PAGES, NOT_FOUND]) {
+for (const { path, name } of ALL_PAGES) {
   test(`${name} (${path}) links an SVG icon, a 32px PNG icon and an apple-touch-icon, and each one loads`, async ({ page, request }) => {
     await page.goto(path);
     const icons = await page.locator('head > link[rel~="icon"], head > link[rel="apple-touch-icon"]').evaluateAll((links) =>

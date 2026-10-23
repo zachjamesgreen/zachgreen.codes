@@ -196,6 +196,12 @@ export interface StatsAssertionOptions {
    */
   echoUpstream?: boolean;
   /**
+   * The upstream is the Docker test's stub, which accepts a /api/send that carries the STUB_HANG_HEADER header and
+   * never answers it, so the check that nginx cuts a stuck Umami off within seconds can run. Production's Umami
+   * can't be made to hang, so that check is skipped there.
+   */
+  silentUpstream?: boolean;
+  /**
    * A public hostname of the server, e.g. "zachgreen.codes", whose port 3000 must not accept a
    * connection from here: Umami listens on the server's loopback only. Without it that check
    * is skipped, and runStatsAssertions says so.
@@ -211,6 +217,12 @@ const STATS_SECURITY_HEADERS: Readonly<Record<string, string>> = {
   "referrer-policy": "strict-origin-when-cross-origin",
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
 };
+
+/** The request header that makes the Docker test's stub upstream hold a /api/send open without answering. */
+export const STUB_HANG_HEADER = "x-stub-hang";
+
+/** The most the tracker may wait on nginx for its beacon to be answered, when Umami never answers. */
+const BEACON_DEADLINE_SECONDS = 5;
 
 // nginx's limit on the login: 5 a minute, plus a burst of 3, so 7 in a row can't all pass.
 const LOGIN_ATTEMPTS = 7;
@@ -242,6 +254,12 @@ export async function runStatsAssertions(opts: StatsAssertionOptions): Promise<v
     assert.equal(reply.headers.get("x-powered-by"), null, "X-Powered-By");
   }
 
+  // The site tells visitors its page views are counted cookie-free (the footer), so the two things the
+  // tracker talks to must never set one.
+  function assertNoCookie(reply: Reply): void {
+    assert.equal(reply.headers.get("set-cookie"), null, "Set-Cookie");
+  }
+
   const checks: Record<string, () => Promise<void>> = {
     "http://stats/x 301s to https://stats/x": async () => {
       const reply = await get(http, "/x");
@@ -253,23 +271,26 @@ export async function runStatsAssertions(opts: StatsAssertionOptions): Promise<v
       assert.ok(reply.status < 500, `status ${reply.status}`);
       assertStatsHeaders(reply);
     },
-    "/insights is the tracker: 200, JavaScript, and loadable from any origin": async () => {
+    "/insights is the tracker: 200, JavaScript, loadable from any origin, and sets no cookie": async () => {
       const reply = await get(https, "/insights");
       assert.equal(reply.status, 200, "status");
       assert.match(reply.headers.get("content-type") ?? "", /^(?:application|text)\/javascript\b/, "Content-Type");
       assert.equal(reply.headers.get("access-control-allow-origin"), "*", "Access-Control-Allow-Origin");
       assertStatsHeaders(reply);
+      assertNoCookie(reply);
     },
     "/login is 200": async () => {
       const reply = await get(https, "/login");
       assert.equal(reply.status, 200, "status");
       assertStatsHeaders(reply);
     },
-    "/api/send, the tracker's beacon, isn't rate-limited and keeps Umami's CORS headers": async () => {
+    "/api/send, the tracker's beacon, isn't rate-limited, keeps Umami's CORS headers, has the security headers and sets no cookie": async () => {
       for (let i = 1; i <= 10; i++) {
         const reply = await post("/api/send", "{}");
         assert.notEqual(reply.status, 429, `POST ${i} was rate-limited`);
         assert.equal(reply.headers.get("access-control-allow-origin"), "*", `Access-Control-Allow-Origin on POST ${i}`);
+        assertStatsHeaders(reply);
+        assertNoCookie(reply);
       }
     },
     [`${LOGIN_ATTEMPTS} rapid POSTs to /api/auth/login get at least one 429, all with the security headers`]: async () => {
@@ -287,19 +308,40 @@ export async function runStatsAssertions(opts: StatsAssertionOptions): Promise<v
   const skipped: string[] = [];
   const echoCheck = "the upstream gets Host, X-Real-IP, X-Forwarded-For and X-Forwarded-Proto from nginx, not from the client";
   if (opts.echoUpstream) {
-    checks[echoCheck] = async () => {
-      const forged = "203.0.113.9";
-      const reply = await get(https, "/echo", { "x-real-ip": forged, "x-forwarded-for": forged, "x-forwarded-proto": "http" });
-      assert.equal(reply.status, 200, "status");
-      const seen = JSON.parse(reply.body) as Record<string, string>;
-      assert.equal(seen.host, host, "Host");
-      assert.ok(isIP(seen.xRealIp ?? "") !== 0, `X-Real-IP "${seen.xRealIp}" isn't an address`);
-      assert.notEqual(seen.xRealIp, forged, "X-Real-IP came from the client");
-      assert.equal(seen.xForwardedFor, seen.xRealIp, "X-Forwarded-For isn't the client's address alone");
-      assert.equal(seen.xForwardedProto, "https", "X-Forwarded-Proto");
-    };
+    // /api/send has a location of its own, so it is checked as well as a path that falls to the default one.
+    for (const path of ["/echo", "/api/send"]) {
+      checks[`${echoCheck} (${path})`] = async () => {
+        const forged = "203.0.113.9";
+        const reply = await get(https, path, { "x-real-ip": forged, "x-forwarded-for": forged, "x-forwarded-proto": "http" });
+        assert.equal(reply.status, 200, "status");
+        const seen = JSON.parse(reply.body) as Record<string, string>;
+        assert.equal(seen.host, host, "Host");
+        assert.ok(isIP(seen.xRealIp ?? "") !== 0, `X-Real-IP "${seen.xRealIp}" isn't an address`);
+        assert.notEqual(seen.xRealIp, forged, "X-Real-IP came from the client");
+        assert.equal(seen.xForwardedFor, seen.xRealIp, "X-Forwarded-For isn't the client's address alone");
+        assert.equal(seen.xForwardedProto, "https", "X-Forwarded-Proto");
+      };
+    }
   } else {
     skipped.push(`${echoCheck} (no echoing upstream)`);
+  }
+  // The tracker holds a click on a tracked link until its beacon is answered, with no timeout of its own.
+  const silentCheck = `/api/send answers 504 within ${BEACON_DEADLINE_SECONDS} seconds when Umami never answers, with the security headers`;
+  if (opts.silentUpstream) {
+    checks[silentCheck] = async () => {
+      const started = performance.now();
+      const reply = await send(dispatcher, new URL("/api/send", https), {
+        method: "POST",
+        body: "{}",
+        headers: { "content-type": "application/json", origin: "https://zachgreen.codes", [STUB_HANG_HEADER]: "1" },
+      });
+      const seconds = (performance.now() - started) / 1000;
+      assert.equal(reply.status, 504, "status");
+      assert.ok(seconds < BEACON_DEADLINE_SECONDS, `the 504 took ${seconds.toFixed(1)} seconds`);
+      assertStatsHeaders(reply);
+    };
+  } else {
+    skipped.push(`${silentCheck} (no silent upstream)`);
   }
   const portCheck = "port 3000 isn't reachable from outside the server";
   const { privatePortHost } = opts;

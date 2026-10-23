@@ -95,11 +95,11 @@ write.
 | --- | --- |
 | `pnpm check` | `pnpm lint` (html-validate, stylelint, tsc, the font check, the content guard), then `pnpm test:unit` |
 | `pnpm test:unit` | The unit tests in `tests/unit/` |
-| `pnpm test:e2e` | Playwright in Chromium, Firefox and WebKit, against its own server on port 4322 (`E2E_PORT` picks another), so it can run beside `pnpm dev`. Install the browsers once with `pnpm exec playwright install`. |
+| `pnpm test:e2e` | Playwright in Chromium, Firefox and WebKit, against its own server on port 4322 (`E2E_PORT` picks another), so it can run beside `pnpm dev`. Install the browsers once with `pnpm exec playwright install`. Specs import `test` from `tests/helpers/test.ts`, which stubs the stats host for every test, so none reaches it. |
 | `pnpm test:nginx` | Runs the config in `deploy/nginx/` in Docker (nginx 1.28.3) and checks redirects, headers, caching and that nothing outside `site/` is served. For the stats host, it proxies to a stub of Umami and checks the proxy headers, the security headers and the login's rate limit. Needs Docker and openssl. |
-| `pnpm test:links` | Crawls the local site, external links included |
-| `pnpm test:lighthouse` | The Lighthouse budgets in `lighthouserc.json`. Needs Chrome. |
-| `pnpm test:live` | The `test:nginx` checks against production, plus brotli, font caching, Umami at `stats.zachgreen.codes`, and port 3000 being closed. It posts made-up logins until it gets a 429, so the dashboard's login is rate-limited from your address for a minute afterwards. `BASE_URL` and `STATS_BASE_URL` point it elsewhere. |
+| `pnpm test:links` | Crawls the local site, external links included. It skips the stats host, and fails if it requested it. |
+| `pnpm test:lighthouse` | The Lighthouse budgets in `lighthouserc.json`, with the fonts and the stats host blocked. Needs Chrome. |
+| `pnpm test:live` | The `test:nginx` checks against production, plus brotli, font caching, that every page carries the tracker tag, Umami at `stats.zachgreen.codes`, and port 3000 being closed. It posts made-up logins until it gets a 429, so the dashboard's login is rate-limited from your address for a minute afterwards. `BASE_URL` and `STATS_BASE_URL` point it elsewhere. |
 
 CI runs all of them except `test:live`, which hits the live site.
 
@@ -206,12 +206,87 @@ Docker on the server (`deploy/umami/compose.yaml`). Umami listens on the server'
 | --- | --- | --- |
 | `deploy/umami/compose.yaml` | `/srv/umami/compose.yaml` | The two containers, pinned to an exact tag and digest each |
 | `deploy/umami/.env.example` | `/srv/umami/.env` (root, 600) | The secrets. The script generates the real file once. Never commit it. |
-| `deploy/nginx/stats.zachgreen.codes.conf` | `/etc/nginx/sites-available/stats.zachgreen.codes`, linked from `sites-enabled/` | The stats host: HTTP redirect, TLS, security headers, the proxy |
+| `deploy/nginx/stats.zachgreen.codes.conf` | `/etc/nginx/sites-available/stats.zachgreen.codes`, linked from `sites-enabled/` | The stats host: HTTP redirect, TLS, security headers, the proxy, short timeouts on `/api/send` |
 | `deploy/nginx/conf.d/zachgreen-umami.conf` | `/etc/nginx/conf.d/zachgreen-umami.conf` | The rate limit on the login (http context) |
 
 The login, `/api/auth/login`, takes 5 attempts a minute per address after a burst of 3.
-The tracker (`/insights`) and its beacon (`/api/send`) aren't limited. nginx adds HSTS
-and the other security headers, but no CSP: Umami sends its own, which its dashboard needs.
+The tracker (`/insights`) and its beacon (`/api/send`) aren't limited, but `/api/send` gives
+up on a stuck Umami after 3 seconds (2 to connect, 3 to send and to read): see
+[The tracker on the site](#the-tracker-on-the-site). nginx adds HSTS and the other security
+headers, but no CSP: Umami sends its own, which its dashboard needs.
+
+A change to the stats vhost, such as those timeouts, goes live by pulling the server's clone
+(`pnpm deploy`) and running `sudo deploy/setup-umami.sh` again: it installs the changed
+vhost, runs `nginx -t`, reloads nginx and probes it, and puts the old files back if any of
+that fails.
+
+### The tracker on the site
+
+Every page, the 404 page included, has this tag last in its `<head>`. `scripts/lib/site.ts`
+writes it once (`TRACKER_TAG`, with `STATS_ORIGIN` and `UMAMI_WEBSITE_ID`), and the tests
+compare each page with it. The website ID is public. If the ID ever changes (a new database
+is a new Umami), change it there and in each page's tag, and `pnpm test:e2e` shows any page
+that was missed.
+
+```html
+<script defer src="https://stats.zachgreen.codes/insights" data-website-id="..." data-domains="zachgreen.codes"></script>
+```
+
+`data-domains` makes the tracker count visits to zachgreen.codes only, so the local server
+and previews are never counted. The CSP already allows the script and its beacon
+(`script-src` and `connect-src` name the stats host), and the site has no JavaScript of its own.
+
+Links carry a `data-umami-event` that names the click in the dashboard:
+
+| Event | Links |
+| --- | --- |
+| `resume-pdf-download` | `/resume/zach-green-resume.pdf` |
+| `outbound-github` | github.com/zachjamesgreen |
+| `outbound-linkedin` | linkedin.com/in/zachjamesgreen |
+| `email-click` | every `mailto:` link |
+| `outbound-tagshelf-repo` | github.com/zachjamesgreen/tagshelf and its releases page |
+
+`tests/e2e/analytics.spec.ts` fails for a link to one of these without its event, and for an
+event on any other link.
+
+**Cookie-free.** Umami 3.4.0's tracker sets no cookie and writes no storage. The only thing
+it touches is a read of `localStorage` for the opt-out flag. The footer says so, and
+`tests/unit/analytics.test.ts` fails if the tracker the tests run ever starts storing something.
+
+**Leaving yourself out.** In the browser console on https://zachgreen.codes (not on the
+dashboard's own host), run `localStorage.setItem('umami.disabled', 1)`. That browser then
+counts nothing, and the links are plain links, since the tracker only takes clicks over when it
+is counting (the same goes for any hostname but zachgreen.codes, such as a local server; the e2e
+tests pin both). `localStorage.removeItem('umami.disabled')` undoes it. Clearing the site's data
+removes it too.
+
+**What a tracked link does.** Umami cancels the click on a link with an event and sends the
+event, and only after that request ends does it send the browser to the link. A refused
+connection or an error reply ends it at once, so Umami being down never holds a link up. An
+Umami that accepts the request and never answers does hold it, because the tracker has no
+timeout of its own. So nginx has one: `/api/send` answers 504 after 3 seconds
+(`proxy_read_timeout` in the stats vhost), and the link is followed then. `pnpm test:nginx`
+checks that against a stub Umami that never answers, and the e2e tests pin the tracker's
+side of it.
+
+The PDF link has `target="_blank"` and `download`. The tracker leaves a `target="_blank"`
+link to the browser, so the download starts at once, whatever Umami is doing, and is still
+counted. Without it the tracker would navigate to the PDF itself, which drops `download`:
+the browser would treat it as any link to a PDF. Links to GitHub, LinkedIn and the contact
+address stay in the same tab. A click with Ctrl, Shift or
+Cmd held is also left to the browser, and counted.
+
+**No test reaches the stats host.** The e2e specs get `test` from `tests/helpers/test.ts`,
+which stubs the host for every test, and the real tracker is tested from a copy kept in
+`tests/e2e/fixtures/umami-tracker-<version>.js`. `scripts/resume-pdf.ts` and
+`scripts/og-image.ts` stub it too, and Lighthouse and the link check skip it.
+`tests/unit/analytics.test.ts` fails for a new spec, script or Lighthouse run that doesn't.
+Every e2e browser also goes through a proxy that refuses everything but the loopback
+(`use.proxy` in `playwright.config.ts`), so a request that gets past Playwright's routes (a
+download in Chromium and WebKit, WebKit's connection to the host of every https page it
+routes) fails instead of leaving the machine. The tests that run the real tracker swap it for
+one that records what it refuses, and fail if it logged anything. `pnpm test:live` is the one
+run that talks to the stats host.
 
 ### Installing
 
@@ -266,7 +341,7 @@ After the first install:
 
 - run `sudo certbot renew --dry-run` once, to check that renewal works;
 - run `pnpm test:live` from your machine;
-- add the tracker tag, with the Website ID the summary prints, to the site's pages.
+- check that the Website ID the summary prints is `UMAMI_WEBSITE_ID` in `scripts/lib/site.ts`. The tag is already in the site's pages (see [The tracker on the site](#the-tracker-on-the-site)).
 
 ### Updates, about monthly
 
@@ -280,9 +355,17 @@ not Umami or Postgres. The login page is public, so staying current is part of k
 2. In `deploy/umami/compose.yaml`, bump the tag and its digest. To get the digest:
    `docker buildx imagetools inspect ghcr.io/umami-software/umami:<version>` (or
    `postgres:<tag>`), and copy the first `Digest:` line.
-3. Open a pull request and merge it. (`pnpm check` checks that each image still has an
+3. For an Umami bump, in the same pull request replace the tracker the e2e tests run with
+   the new version's. It is the image's `public/script.js`, the file `/insights` serves:
+   `docker run --rm --entrypoint cat ghcr.io/umami-software/umami:<version> public/script.js`.
+   Save it as `tests/e2e/fixtures/umami-tracker-<version>.js` under the old file's header
+   comment, with the version and the source URL changed, and delete the old fixture.
+   `tests/unit/analytics.test.ts` fails while the fixture's version isn't the image's, or if
+   the new tracker stores anything, which would end the footer's "cookie-free". Read what
+   changed in the script itself: its click handling is what the e2e tests pin.
+4. Open a pull request and merge it. (`pnpm check` checks that each image still has an
    exact tag and a digest, not that the digest belongs to the tag, so copy it carefully.)
-4. Pull the server's clone (`pnpm deploy`), then run `sudo deploy/setup-umami.sh` there
+5. Pull the server's clone (`pnpm deploy`), then run `sudo deploy/setup-umami.sh` there
    again. It installs the new `compose.yaml` and recreates the containers that changed.
    The data stays in the `umami-db` volume.
 

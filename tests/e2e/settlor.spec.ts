@@ -2,7 +2,9 @@
 // site.spec.ts, and scripts/check-content.ts keeps Settlor's internal names off
 // every page.
 
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+
+import { expect, test } from "../helpers/test.ts";
 
 /** The five workstreams, strongest first. The AI work is in progress, so it has no scale yet. */
 const WORKSTREAMS = [

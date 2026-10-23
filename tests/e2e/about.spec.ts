@@ -1,7 +1,7 @@
 // The About page: the backstory as an intro and a timeline. The
 // shell and the site-wide rules are in site.spec.ts.
 
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../helpers/test.ts";
 
 /**
  * The timeline in order: where each entry starts (its first <time>), what it must name, and
