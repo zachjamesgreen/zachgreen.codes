@@ -10,16 +10,18 @@
 //   node scripts/check-links.ts
 //
 // Skipped on purpose:
-//  - zachgreen.codes and stats.zachgreen.codes: canonical, og:url, og:image and
-//    the analytics host point at the production site, which doesn't exist until
-//    the first deploy. The live checks after deploy cover them.
+//  - zachgreen.codes and stats.zachgreen.codes: canonical, og:url and og:image
+//    point at the production site, and the pages' <script src> at the analytics
+//    host. Neither is checked here: the script is the tracker, and a crawl must
+//    never count as a visit or touch the stats. The live checks after deploy
+//    cover both. The run fails if a stats link is requested after all.
 //  - linkedin.com answers bots with 999, whatever the URL.
 
 import { LinkChecker, LinkState, type LinkResult, type RedirectInfo } from "linkinator";
-import { CONTACT_EMAIL } from "./lib/site.ts";
+import { CONTACT_EMAIL, ORIGIN, STATS_ORIGIN } from "./lib/site.ts";
 import { startServer } from "./serve.ts";
 
-const SKIP = [String.raw`^https://zachgreen\.codes`, String.raw`^https://stats\.zachgreen\.codes`, String.raw`linkedin\.com`];
+const SKIP = [`^${RegExp.escape(ORIGIN)}`, `^${RegExp.escape(STATS_ORIGIN)}`, String.raw`linkedin\.com`];
 
 // The 404 page is only reachable by a missing URL, so it is a crawl start of its own.
 const ENTRY_POINTS = ["/", "/404.html"];
@@ -77,6 +79,8 @@ const skipped = links.filter((link) => link.state === LinkState.SKIPPED && !link
 const checked = links.filter((link) => link.state === LinkState.OK);
 const external = checked.filter((link) => !link.url.startsWith(server.url));
 
+// Skipped means linkinator saw the link and never requested it.
+const statsRequested = links.filter((link) => link.url.startsWith(STATS_ORIGIN) && link.state !== LinkState.SKIPPED);
 const wrongAddress = mailto.filter((link) => mailtoAddress(link.url) !== CONTACT_EMAIL);
 
 console.log(
@@ -93,6 +97,9 @@ for (const { url, targetUrl } of internalRedirects.values()) {
 }
 for (const link of wrongAddress) {
   problems.push(`MAILTO ${link.url} is not ${CONTACT_EMAIL}  (linked from ${link.parent ?? "?"})`);
+}
+for (const link of statsRequested) {
+  problems.push(`STATS ${link.url} was requested  (linked from ${link.parent ?? "?"}); the link check must never reach the stats host`);
 }
 if (mailto.length === 0) problems.push(`MAILTO no mailto: link found, expected ${CONTACT_EMAIL} on the pages`);
 for (const problem of problems) console.error(`  ${problem}`);

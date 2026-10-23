@@ -8,7 +8,7 @@
       "numberOfRuns": 3,
       "settings": {
         "chromeFlags": "--no-sandbox",
-        "blockedUrlPatterns": ["*/fonts/*"]
+        "blockedUrlPatterns": ["*/fonts/*", "https://stats.zachgreen.codes/*"]
       }
     },
     "assert": {

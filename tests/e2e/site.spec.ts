@@ -3,27 +3,18 @@
 // and tests/unit/pages.test.ts makes sure every page is in PAGES.
 
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 import { codePointsOutside, MONOLISA_RANGES } from "../../scripts/font-metrics.ts";
-import { CONTACT_EMAIL, FONT_FAMILIES, haveFonts, loadedFamilies, NOT_FOUND_PATH, ORIGIN } from "../../scripts/lib/site.ts";
+import { CONTACT_EMAIL, FONT_FAMILIES, haveFonts, loadedFamilies, missingFont, ORIGIN } from "../../scripts/lib/site.ts";
 import { AXE_TAGS } from "../helpers/axe.ts";
-import { PAGES } from "../helpers/pages.ts";
+import { ALL_PAGES as ALL, NOT_FOUND } from "../helpers/pages.ts";
+import { expect, test } from "../helpers/test.ts";
 
 const WIDTHS = [320, 768, 1280] as const;
 
-/** Any unknown path gets the styled 404 page, with a 404 status. */
-const NOT_FOUND = { path: NOT_FOUND_PATH, name: "404" } as const;
-
-/** Every page that carries the shared header and footer. */
-const ALL: readonly { path: string; name: string }[] = [...PAGES, NOT_FOUND];
-
 // The fonts are never committed, so CI runs without them.
 const HAVE_FONTS = haveFonts();
-const FONT_FILE = /\/fonts\/[^/\s"]+\.woff2\b/;
-
-/** Without the fonts, every font request fails: expected in CI, a bug anywhere else. */
-const missingFont = (text: string) => !HAVE_FONTS && FONT_FILE.test(text);
 
 /** The root's scroll and client widths: equal unless something sticks out sideways. */
 const rootWidths = (page: Page) =>
@@ -276,6 +267,37 @@ for (const { path, name } of ALL) {
     });
   });
 }
+
+// The footer is a row of the links and the copyright, which sit at its two ends while both fit and stack
+// when they don't, and the privacy line (analytics.spec.ts) has a row of its own under them. The shell is the
+// same on every page, so one page shows it.
+test("the footer keeps its links at the left and its copyright at the right edge, with the privacy line on a row of its own below", async ({
+  page,
+}) => {
+  for (const width of [1280, 768, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/about/");
+    await loadedFamilies(page);
+    const footer = (await page.locator("body > footer").boundingBox())!;
+    const links = (await page.locator("body > footer ul").boundingBox())!;
+    const copyright = (await page.locator("body > footer p", { hasText: "Copyright" }).boundingBox())!;
+    const privacy = (await page.locator("body > footer p", { hasText: "Page views" }).boundingBox())!;
+    const at = `${width}px`;
+
+    expect(links.x, `${at}: the links start at the left edge`).toBeCloseTo(footer.x, 0);
+    if (width > 320) {
+      expect(copyright.y, `${at}: the copyright is on the links' row`).toBeLessThan(links.y + links.height);
+      expect(links.y, `${at}: the copyright is on the links' row`).toBeLessThan(copyright.y + copyright.height);
+      expect(copyright.x + copyright.width, `${at}: the copyright ends at the right edge`).toBeCloseTo(footer.x + footer.width, 0);
+    } else {
+      expect(copyright.y, `${at}: the copyright wraps below the links`).toBeGreaterThanOrEqual(links.y + links.height);
+      expect(copyright.x, `${at}: the wrapped copyright starts at the left edge`).toBeCloseTo(footer.x, 0);
+    }
+    expect(privacy.y, `${at}: the privacy line is below the links`).toBeGreaterThanOrEqual(links.y + links.height);
+    expect(privacy.y, `${at}: the privacy line is below the copyright`).toBeGreaterThanOrEqual(copyright.y + copyright.height);
+    expect(privacy.x, `${at}: the privacy line starts at the left edge`).toBeCloseTo(footer.x, 0);
+  }
+});
 
 // JavaScript off, or blocked. The site has none of its own, so
 // every page and every header link must work without it.

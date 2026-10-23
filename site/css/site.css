@@ -490,6 +490,11 @@
       padding-block: var(--space-1);
       color: var(--ink);
     }
+
+    /* The privacy line has a row of its own, under the links and the copyright. */
+    & .site-footer__note {
+      flex-basis: 100%;
+    }
   }
 
   /* A titled part of a page. The heading takes the section's accent. */

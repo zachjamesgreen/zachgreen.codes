@@ -7,10 +7,11 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 import { readPdf } from "../helpers/pdf-text.ts";
 import { PAGES } from "../helpers/pages.ts";
+import { expect, test } from "../helpers/test.ts";
 
 const PDF_FILE = fileURLToPath(new URL("../../site/resume/zach-green-resume.pdf", import.meta.url));
 const OG_SOURCE = fileURLToPath(new URL("../../scripts/og.html", import.meta.url));

@@ -3,10 +3,11 @@
 // /__fixtures__/ by the dev server.
 
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Locator } from "@playwright/test";
+import type { Locator } from "@playwright/test";
 
-import { FONT_FAMILIES, haveFonts, loadedFamilies } from "../../scripts/lib/site.ts";
+import { FONT_FAMILIES, haveFonts, loadedFamilies, stubStats } from "../../scripts/lib/site.ts";
 import { AXE_TAGS } from "../helpers/axe.ts";
+import { expect, test } from "../helpers/test.ts";
 
 const FIXTURE = "/__fixtures__/components.html";
 
@@ -329,6 +330,8 @@ test("the fallback faces take up the same space as the web fonts", async ({ brow
 
   const measure = async (blockFonts: boolean) => {
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    // A context made by hand is not the stubbed `context` fixture.
+    await stubStats(context);
     const page = await context.newPage();
     if (blockFonts) await page.route("**/fonts/**", (route) => route.abort());
     await page.goto(FIXTURE);

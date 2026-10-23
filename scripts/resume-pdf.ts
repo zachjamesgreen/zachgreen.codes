@@ -11,7 +11,7 @@
 
 import { chromium } from "@playwright/test";
 
-import { requireWebFonts } from "./lib/site.ts";
+import { requireWebFonts, stubStats } from "./lib/site.ts";
 import { startServer } from "./serve.ts";
 
 export const RESUME_PDF = "site/resume/zach-green-resume.pdf";
@@ -21,6 +21,8 @@ export async function renderResumePdf(baseUrl: string, outFile: string): Promise
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage();
+    // The page carries the tracker's script tag. Printing is not a visit, and must not be counted as one.
+    await stubStats(page);
     const url = new URL("/resume/", baseUrl).href;
     const response = await page.goto(url);
     if (!response?.ok()) throw new Error(`${url} answered ${response?.status()}`);

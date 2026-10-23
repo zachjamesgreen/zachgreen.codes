@@ -1,8 +1,9 @@
 // Checks production with the same assertions `pnpm test:nginx` runs against the repo's
 // config in Docker, plus the things only the server has: the brotli module, the fonts,
-// and Umami itself behind stats.zachgreen.codes. It hits the live site, so it isn't part
-// of `pnpm check` or CI. Run it after a deploy with `pnpm test:live`; BASE_URL and
-// STATS_BASE_URL point it at other origins.
+// the tracker tag in each page (a deploy that missed one counts nothing), and Umami itself
+// behind stats.zachgreen.codes. It hits the live site, and is the one run that talks to the
+// stats host, so it isn't part of `pnpm check` or CI. Run it after a deploy with
+// `pnpm test:live`; BASE_URL and STATS_BASE_URL point it at other origins.
 //
 // The stats checks post made-up credentials to the login until nginx answers 429, so for
 // a minute afterwards the dashboard's login from this address is rate-limited too.
@@ -11,11 +12,12 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
-import { fontFaceUrls, ORIGIN } from "../../scripts/lib/site.ts";
+import { fontFaceUrls, NOT_FOUND_PATH, ORIGIN, STATS_ORIGIN, TRACKER_TAG } from "../../scripts/lib/site.ts";
+import { ALL_PAGES } from "../helpers/pages.ts";
 import { runAssertions, runStatsAssertions } from "../nginx/assertions.ts";
 
 const base = process.env.BASE_URL || ORIGIN;
-const statsBase = process.env.STATS_BASE_URL || `https://stats.${new URL(ORIGIN).hostname}`;
+const statsBase = process.env.STATS_BASE_URL || STATS_ORIGIN;
 
 // The font the year-long immutable caching is checked on. The fonts are never committed,
 // so only a server they have been copied to (scripts/deploy.sh) can serve one.
@@ -28,6 +30,16 @@ test(`${base} passes the nginx checks, with brotli and a font`, async () => {
 
   await runAssertions({ base, expectBrotli: true, fontPath: FONT_PATH });
 });
+
+// The tracker tag is what makes the site count visits, and nothing else notices when a deploy drops it.
+for (const { path, name } of ALL_PAGES) {
+  test(`${base}${path} (${name}) carries the tracker tag, once`, async () => {
+    const response = await fetch(new URL(path, base));
+    assert.equal(response.status, path === NOT_FOUND_PATH ? 404 : 200);
+    const html = await response.text();
+    assert.equal(html.split(TRACKER_TAG).length - 1, 1, `${path} does not have exactly one ${TRACKER_TAG}`);
+  });
+}
 
 test(`${statsBase} passes the stats checks, and port 3000 is closed from here`, async () => {
   // By hostname, never by address: the server's address isn't written down anywhere.

@@ -11,7 +11,7 @@
 
 import { chromium, type Browser } from "@playwright/test";
 
-import { requireWebFonts } from "./lib/site.ts";
+import { requireWebFonts, stubStats } from "./lib/site.ts";
 import { startServer } from "./serve.ts";
 
 export const OG_IMAGE = "site/img/og.png";
@@ -24,6 +24,7 @@ export const ICONS = [
 export async function renderOgImage(browser: Browser, baseUrl: string, outFile: string): Promise<void> {
   const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
   try {
+    await stubStats(page);
     const url = new URL("/__fixtures__/og.html", baseUrl).href;
     const response = await page.goto(url);
     if (!response?.ok()) throw new Error(`${url} answered ${response?.status()}`);
@@ -41,6 +42,7 @@ export async function renderIcon(browser: Browser, baseUrl: string, outFile: str
   // The SVG has a viewBox and no width or height, so as a document it scales to the viewport.
   const page = await browser.newPage({ viewport: { width: size, height: size }, deviceScaleFactor: 1 });
   try {
+    await stubStats(page);
     const url = new URL("/favicon.svg", baseUrl).href;
     const response = await page.goto(url);
     if (!response?.ok()) throw new Error(`${url} answered ${response?.status()}`);

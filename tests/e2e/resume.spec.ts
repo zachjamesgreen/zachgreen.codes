@@ -8,11 +8,11 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
-import { expect, test } from "@playwright/test";
 import { extractLinks } from "unpdf";
 
 import { findForbidden, hitSummary, loadForbiddenTerms, NO_TERMS } from "../../scripts/check-content.ts";
 import { htmlWords, pdfFontNames, pdfWords, readPdf } from "../helpers/pdf-text.ts";
+import { expect, test } from "../helpers/test.ts";
 
 const PDF_URL = "/resume/zach-green-resume.pdf";
 const PDF_FILE = fileURLToPath(new URL(`../../site${PDF_URL}`, import.meta.url));
@@ -89,10 +89,12 @@ test.describe("resume page", () => {
     }
   });
 
-  test("links to the PDF with a download attribute, and the PDF is served", async ({ page }) => {
+  // target="_blank" keeps the analytics tracker from taking the click over, which would drop `download`.
+  test("links to the PDF with download and target=_blank, and the PDF is served", async ({ page }) => {
     const link = page.locator(`main a[href="${PDF_URL}"]`);
     await expect(link).toHaveCount(1);
     await expect(link).toHaveAttribute("download");
+    await expect(link).toHaveAttribute("target", "_blank");
     await expect(link).toBeVisible();
     const response = await page.request.get(PDF_URL);
     expect(response.status()).toBe(200);

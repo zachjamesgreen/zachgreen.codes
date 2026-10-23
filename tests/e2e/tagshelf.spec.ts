@@ -1,7 +1,7 @@
 // The tagshelf project page. The shell and the site-wide rules are
 // in site.spec.ts.
 
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../helpers/test.ts";
 
 const REPO = "https://github.com/zachjamesgreen/tagshelf";
 
